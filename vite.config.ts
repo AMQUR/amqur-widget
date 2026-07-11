@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
@@ -13,10 +13,21 @@ export default defineConfig({
     strictPort: false,
   },
 
+  test: {
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/e2e/**",
+      "**/.{idea,git,cache,output,temp}/**",
+    ],
+  },
+
   build: {
     lib: {
       entry: "src/embed.tsx",
-      name: "AMQUR",
+      // Must NOT be "AMQUR" — Vite assigns `var <name> = …` and would overwrite
+      // window.AMQUR that embed.tsx sets with { init, destroy, isReady }.
+      name: "AmqurWidgetBundle",
       fileName: "amqur-widget",
       formats: ["iife"],
     },
