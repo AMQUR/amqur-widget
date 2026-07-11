@@ -13,6 +13,15 @@ export default defineConfig({
     strictPort: false,
   },
 
+  test: {
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/e2e/**",
+      "**/.{idea,git,cache,output,temp}/**",
+    ],
+  },
+
   build: {
     lib: {
       entry: "src/embed.tsx",
