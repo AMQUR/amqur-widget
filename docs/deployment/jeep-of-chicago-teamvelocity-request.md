@@ -1,6 +1,9 @@
 # TeamVelocity / dealer.com — Jeep of Chicago script request
 
-**Status:** Template ready — **not submitted** (no TeamVelocity API or portal credential on this machine)
+**Status:** Template ready — **not submitted** (no TeamVelocity API, portal credential, or verified CSM channel on this machine)
+
+**Path role:** Path C when Path A (tagmanager.google.com) and Path B (org OAuth client) are unavailable.  
+Stock Cloud SDK GTM OAuth is **unsupported** — do not use it as a substitute.
 
 ## Request summary
 
