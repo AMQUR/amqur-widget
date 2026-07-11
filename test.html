@@ -1,21 +1,23 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8" />
     <title>AMQUR Widget Local Test</title>
 </head>
 
 <body>
     <h1>AMQUR Widget Test Page</h1>
+    <p>Serve the local build (<code>npm run build</code>) or point <code>src</code> at your hosted IIFE.</p>
 
-    <!-- Load compiled widget -->
-    <script src="https://saadimranhere.github.io/amqur-widget/cdn/amqur-widget.js"></script>
-    <!-- Initialize widget -->
+    <!-- Prefer local dist during development -->
+    <script src="./dist/amqur-widget.iife.js"></script>
     <script>
+        // Replace placeholders before use — do not commit real production credentials or tenant slugs.
         window.AMQUR.init({
-            apiBaseUrl: "https://amqur-backend-production.up.railway.app/api",
-            tenantSlug: "dial-auto-group",
-            locationSlug: "jeep-of-chicago"
+            apiBaseUrl: "http://localhost:3000/api",
+            tenantSlug: "YOUR_TENANT_SLUG",
+            locationSlug: "YOUR_LOCATION_SLUG"
         });
     </script>
 
