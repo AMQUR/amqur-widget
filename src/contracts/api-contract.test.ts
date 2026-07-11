@@ -20,12 +20,23 @@ describe('API contract fixtures', () => {
         tenant: { id: 't1', slug: 'demo', name: 'Demo Motors' },
         location: { id: 'l1', slug: 'main', name: 'Main' },
         branding: { primaryColor: '#111', accentColor: '#fff', logoUrl: null },
-        features: { chat: true, inventory: true, payments: true },
+        features: {
+          chat: true,
+          inventory: true,
+          payments: true,
+          vehicleCompare: true,
+          savedVehicles: true,
+          serviceAi: true,
+          partsAi: true,
+          proactiveEngagement: false,
+          multilingual: true,
+        },
       },
     };
     const data = unwrapApiData<typeof envelope.data>(envelope);
     expect(data.tenant.slug).toBe('demo');
     expect(data.features.inventory).toBe(true);
+    expect(data.features.vehicleCompare).toBe(true);
   });
 
   it('unwraps widget-token payload', () => {

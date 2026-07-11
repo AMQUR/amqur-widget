@@ -2,6 +2,10 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import { sendChatMessage } from './api/chat.api';
 import { useWidget } from './WidgetContext';
+import { CompareTable } from './CompareTable';
+import { detectLocale, t, type Locale } from './i18n';
+import { loadSavedVins, toggleSavedVin } from './savedVehicles';
+import { ProactiveEngagement } from './ProactiveEngagement';
 
 type PaymentSummary = {
     monthlyPayment: number;
@@ -20,9 +24,11 @@ type Vehicle = {
     trim?: string | null;
     mileage?: number | null;
     price?: number | null;
+    drivetrain?: string | null;
     estimatedPayment?: number | null;
     photos?: string[];
     status?: string | null;
+    lastSeenAt?: string | null;
 };
 
 type Message = {
@@ -30,7 +36,9 @@ type Message = {
     role: 'user' | 'assistant';
     text?: string;
     vehicles?: Vehicle[];
+    compare?: boolean;
     payment?: PaymentSummary;
+    provenanceDisclaimer?: string;
     isError?: boolean;
 };
 
@@ -44,12 +52,24 @@ export function ChatView() {
     const { bootstrap, config, conversationId } = useWidget();
     const inventoryEnabled = bootstrap.features?.inventory !== false;
     const paymentsEnabled = bootstrap.features?.payments !== false;
+    const compareEnabled = bootstrap.features?.vehicleCompare !== false;
+    const savedEnabled = bootstrap.features?.savedVehicles !== false;
+    const serviceEnabled = bootstrap.features?.serviceAi !== false;
+    const partsEnabled = bootstrap.features?.partsAi !== false;
+    const multilingual = bootstrap.features?.multilingual !== false;
+
+    const [locale, setLocale] = useState<Locale>(() =>
+        detectLocale(config.locale ?? bootstrap.locales?.[0]),
+    );
+    const [savedVins, setSavedVins] = useState<string[]>(() =>
+        loadSavedVins(config.tenantSlug, config.locationSlug),
+    );
 
     const [messages, setMessages] = useState<Message[]>([
         {
             id: 'welcome',
             role: 'assistant',
-            text: `Welcome to ${bootstrap.location.name}. What can I help you find today?`,
+            text: t(locale, 'welcome', { location: bootstrap.location.name }),
         },
     ]);
 
@@ -130,6 +150,10 @@ export function ChatView() {
                 };
 
                 let assistantMsg: Message;
+                const provenanceDisclaimer =
+                    typeof data.provenance?.disclaimer === 'string'
+                        ? data.provenance.disclaimer
+                        : undefined;
 
                 if (
                     data.type === 'vehicle_detail' &&
@@ -141,10 +165,23 @@ export function ChatView() {
                         role: 'assistant',
                         text: typeof data.reply === 'string' ? data.reply : undefined,
                         vehicles: [data.vehicle as Vehicle],
+                        provenanceDisclaimer,
                     };
                 } else if (
-                    (data.type === 'vehicle_carousel' ||
-                        data.type === 'vehicle_compare') &&
+                    data.type === 'vehicle_compare' &&
+                    inventoryEnabled &&
+                    compareEnabled
+                ) {
+                    assistantMsg = {
+                        id: makeId(),
+                        role: 'assistant',
+                        text: typeof data.reply === 'string' ? data.reply : undefined,
+                        vehicles: Array.isArray(data.vehicles) ? data.vehicles : [],
+                        compare: true,
+                        provenanceDisclaimer,
+                    };
+                } else if (
+                    data.type === 'vehicle_carousel' &&
                     inventoryEnabled
                 ) {
                     assistantMsg = {
@@ -152,6 +189,7 @@ export function ChatView() {
                         role: 'assistant',
                         text: typeof data.reply === 'string' ? data.reply : undefined,
                         vehicles: Array.isArray(data.vehicles) ? data.vehicles : [],
+                        provenanceDisclaimer,
                     };
                 } else if (data.type === 'payment_summary' && paymentsEnabled) {
                     assistantMsg = {
@@ -166,6 +204,8 @@ export function ChatView() {
                             vehicleVin: data.vehicleVin,
                             price: data.price != null ? Number(data.price) : undefined,
                         },
+                        provenanceDisclaimer:
+                            provenanceDisclaimer ?? t(locale, 'estimateOnly'),
                     };
                 } else {
                     assistantMsg = {
@@ -174,6 +214,7 @@ export function ChatView() {
                         text:
                             (typeof data.reply === 'string' && data.reply.trim()) ||
                             "Got it — anything else I can help with?",
+                        provenanceDisclaimer,
                     };
                 }
 
@@ -197,7 +238,7 @@ export function ChatView() {
                 setTimeout(() => inputRef.current?.focus(), 50);
             }
         },
-        [input, sending, config, conversationId, isOnline, inventoryEnabled, paymentsEnabled],
+        [input, sending, config, conversationId, isOnline, inventoryEnabled, paymentsEnabled, compareEnabled, locale],
     );
 
     // Auto-send with a specific text (used by vehicle card buttons)
@@ -316,8 +357,21 @@ export function ChatView() {
                             </div>
                         )}
 
+                        {/* ── Vehicle compare table ── */}
+                        {inventoryEnabled &&
+                            msg.compare &&
+                            msg.vehicles &&
+                            msg.vehicles.length > 1 && (
+                            <div style={{ clear: 'both', marginTop: msg.text ? '10px' : 0 }}>
+                                <CompareTable vehicles={msg.vehicles} />
+                            </div>
+                        )}
+
                         {/* ── Vehicle carousel ── */}
-                        {inventoryEnabled && msg.vehicles && msg.vehicles.length > 0 && (
+                        {inventoryEnabled &&
+                            !msg.compare &&
+                            msg.vehicles &&
+                            msg.vehicles.length > 0 && (
                             <div style={{ clear: 'both', marginTop: msg.text ? '10px' : 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                 {msg.vehicles.map((v) => (
                                     <VehicleCard
@@ -325,8 +379,38 @@ export function ChatView() {
                                         vehicle={v}
                                         onAction={quickSend}
                                         paymentsEnabled={paymentsEnabled}
+                                        savedEnabled={savedEnabled}
+                                        saved={savedVins.includes(v.vin.toUpperCase())}
+                                        onToggleSave={() => {
+                                            const next = toggleSavedVin(
+                                                config.tenantSlug,
+                                                config.locationSlug,
+                                                v.vin,
+                                            );
+                                            setSavedVins(next);
+                                        }}
+                                        labels={{
+                                            details: t(locale, 'details'),
+                                            payment: t(locale, 'payment'),
+                                            hold: t(locale, 'hold'),
+                                            save: t(locale, 'save'),
+                                            compare: t(locale, 'compare'),
+                                        }}
                                     />
                                 ))}
+                            </div>
+                        )}
+
+                        {msg.provenanceDisclaimer && (
+                            <div
+                                style={{
+                                    clear: 'both',
+                                    fontSize: '11px',
+                                    opacity: 0.65,
+                                    marginTop: 6,
+                                }}
+                            >
+                                {msg.provenanceDisclaimer}
                             </div>
                         )}
 
@@ -364,7 +448,62 @@ export function ChatView() {
                             marginBottom: '8px',
                         }}
                     >
-                        You are offline. Messages will send when connectivity returns.
+                        {t(locale, 'offline')}
+                    </div>
+                )}
+
+                {(serviceEnabled || partsEnabled) && (
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: 6,
+                            marginBottom: 8,
+                        }}
+                    >
+                        {serviceEnabled && (
+                            <button
+                                type="button"
+                                style={btnStyle('secondary')}
+                                onClick={() =>
+                                    quickSend(t(locale, 'serviceHelp'))
+                                }
+                            >
+                                {t(locale, 'serviceHelp')}
+                            </button>
+                        )}
+                        {partsEnabled && (
+                            <button
+                                type="button"
+                                style={btnStyle('secondary')}
+                                onClick={() =>
+                                    quickSend(t(locale, 'partsHelp'))
+                                }
+                            >
+                                {t(locale, 'partsHelp')}
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            style={btnStyle('secondary')}
+                            onClick={() =>
+                                quickSend(t(locale, 'talkToSomeone'))
+                            }
+                        >
+                            {t(locale, 'talkToSomeone')}
+                        </button>
+                        {multilingual && (
+                            <button
+                                type="button"
+                                style={btnStyle('secondary')}
+                                aria-label={t(locale, 'language')}
+                                onClick={() =>
+                                    setLocale((l) => (l === 'en' ? 'es' : 'en'))
+                                }
+                            >
+                                {locale === 'en' ? 'ES' : 'EN'}
+                            </button>
+                        )}
                     </div>
                 )}
 
@@ -399,7 +538,7 @@ export function ChatView() {
                             void sendMessage();
                         }
                     }}
-                    placeholder="Ask about vehicles, payments, service…"
+                    placeholder={t(locale, 'placeholder')}
                     aria-label="Message the dealership assistant"
                     disabled={sending || (typeof navigator !== 'undefined' && !navigator.onLine)}
                     maxLength={2000}
@@ -419,9 +558,10 @@ export function ChatView() {
                     disabled={sending || !input.trim()}
                     style={btnStyle('primary')}
                 >
-                    Send
+                    {t(locale, 'send')}
                 </button>
             </div>
+            <ProactiveEngagement locale={locale} />
         </div>
     );
 }
@@ -434,10 +574,24 @@ function VehicleCard({
     vehicle: v,
     onAction,
     paymentsEnabled = true,
+    savedEnabled = false,
+    saved = false,
+    onToggleSave,
+    labels,
 }: {
     vehicle: Vehicle;
     onAction: (text: string, opts?: { action?: string; vin?: string }) => void;
     paymentsEnabled?: boolean;
+    savedEnabled?: boolean;
+    saved?: boolean;
+    onToggleSave?: () => void;
+    labels: {
+        details: string;
+        payment: string;
+        hold: string;
+        save: string;
+        compare: string;
+    };
 }) {
     const title = [v.year, v.make, v.model].filter(Boolean).join(' ');
     const isHeld = v.status === 'HOLD';
@@ -522,7 +676,7 @@ function VehicleCard({
                             })
                         }
                     >
-                        View details
+                        {labels.details}
                     </button>
                     {paymentsEnabled && (
                     <button
@@ -535,7 +689,7 @@ function VehicleCard({
                             })
                         }
                     >
-                        Payment
+                        {labels.payment}
                     </button>
                     )}
                     <button
@@ -548,8 +702,18 @@ function VehicleCard({
                             })
                         }
                     >
-                        Hold
+                        {labels.hold}
                     </button>
+                    {savedEnabled && (
+                        <button
+                            type="button"
+                            style={btnStyle('ghost')}
+                            aria-pressed={saved}
+                            onClick={() => onToggleSave?.()}
+                        >
+                            {saved ? `✓ ${labels.save}` : labels.save}
+                        </button>
+                    )}
                 </div>
             )}
         </div>
@@ -561,7 +725,7 @@ function VehicleCard({
 // ─────────────────────────────
 
 function btnStyle(variant: 'primary' | 'secondary' | 'ghost'): CSSProperties {
-    const base: React.CSSProperties = {
+    const base: CSSProperties = {
         padding: '8px 14px',
         borderRadius: '9px',
         fontSize: '13px',
