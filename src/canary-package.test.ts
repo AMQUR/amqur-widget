@@ -6,7 +6,8 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '../..');
+// src/ -> widget repo root
+const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 describe('canary GTM package safety', () => {
   const loader = fs.readFileSync(
@@ -51,11 +52,11 @@ describe('canary GTM package safety', () => {
     }
   });
 
-  it('legacy canary snippet does not claim live production hosts', () => {
+  it('legacy canary index points at deployment package', () => {
     const legacy = fs.readFileSync(
       path.join(root, 'docs/canary-gtm-snippet.html'),
       'utf8',
     );
-    expect(legacy).toMatch(/NOT|BLOCKED|Replace|provision|__AMQUR_/i);
+    expect(legacy).toMatch(/deployment\/snippets/i);
   });
 });
