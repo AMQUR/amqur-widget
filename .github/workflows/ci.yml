@@ -1,20 +1,81 @@
 name: CI
 
 on:
-  push:
-    branches: [main, 'audit/**']
   pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  push:
+    branches:
+      - main
+      - 'audit/**'
+      - 'feature/**'
+      - 'ops/**'
+  workflow_dispatch:
+
+concurrency:
+  group: widget-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
+
+      - name: Record tested SHA
+        run: |
+          echo "repository=${{ github.repository }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "branch=${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "sha=${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "event=${{ github.event_name }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "pr=${{ github.event.pull_request.number || 'n/a' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "run_id=${{ github.run_id }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
       - run: npm ci
       - run: npm run lint
       - run: npm test
       - run: npm run build
+
+      - name: IIFE inspection
+        run: |
+          set -euo pipefail
+          test -f dist/amqur-widget.iife.js
+          head -c 40 dist/amqur-widget.iife.js | grep -q 'AmqurWidgetBundle'
+          if rg -n 'JWT_SECRET|DATABASE_URL|BOOTSTRAP_SECRET|TEKION_CLIENT_SECRET|sk-ant-|BEGIN PRIVATE KEY' dist/amqur-widget.iife.js; then
+            echo "IIFE secret scan FAILED" >&2
+            exit 1
+          fi
+          echo "IIFE inspection PASSED"
+
+      - name: Secret scan (tracked)
+        run: |
+          set -euo pipefail
+          if git ls-files -z | xargs -0 rg -l --ignore-case 'BEGIN (RSA |OPENSSH )?PRIVATE KEY|JWT_SECRET=[A-Za-z0-9]{16,}|DATABASE_URL=postgres(ql)?://[^:]+:[^@]+@' ; then
+            echo "Potential secret in tracked files" >&2
+            exit 1
+          fi
+          echo "Secret scan PASSED"
+
+      - name: Dependency audit (informational)
+        continue-on-error: true
+        run: npm audit || true
+
+      - name: Write CI head receipt
+        if: always()
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          ## CI receipt
+          - tested_sha: ${{ github.sha }}
+          - run_id: ${{ github.run_id }}
+          - run_url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          EOF
