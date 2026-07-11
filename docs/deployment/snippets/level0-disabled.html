@@ -1,0 +1,11 @@
+<!-- Level 0 — Emergency disable (or empty tag). Publish this to stop all AMQUR loads. -->
+<script>
+(function () {
+  try { localStorage.setItem('amqur_canary_kill', '1'); } catch (e) {}
+  try {
+    if (window.AMQUR_CANARY && window.AMQUR_CANARY.destroy) window.AMQUR_CANARY.destroy();
+    if (window.AMQUR && window.AMQUR.destroy) window.AMQUR.destroy();
+  } catch (e) {}
+  console.info('[AMQUR]', 'emergency_disabled');
+})();
+</script>

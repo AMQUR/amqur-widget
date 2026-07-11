@@ -1,0 +1,24 @@
+<!--
+  Level 1 — Internal employee testing ONLY
+  GTM trigger: Page View + hostname jeepofchicago.com + (Cookie amqur_emp=1 OR Query amqur_employee present)
+  Do NOT publish for all traffic.
+  Set window.__AMQUR_CANARY_CFG__ hosts only after production API/CDN provisioned.
+  Inventory features must remain server-side disabled for public; employee pages may use labeled staging.
+-->
+<script>
+window.__AMQUR_CANARY_CFG__ = {
+  mode: 'employee',
+  percent: 0,
+  allowedHosts: ['www.jeepofchicago.com', 'jeepofchicago.com'],
+  apiBaseUrl: '', /* BLOCKED until provisioned — leave empty to refuse init */
+  assetUrl: '',   /* BLOCKED until provisioned */
+  employeeTokenHash: '', /* optional SHA-256 hex of rotating employee token */
+  requireConsent: false,
+  sri: ''
+};
+</script>
+<script src="/* BLOCKED: host amqur-canary-loader.js from approved CDN */" async></script>
+<!--
+  Operator note: until apiBaseUrl/assetUrl are set, loader refuses to initialize (fail closed).
+  For employee testing against STAGING only, use a visibly labeled internal test page — never this production hostname with fixture inventory.
+-->
