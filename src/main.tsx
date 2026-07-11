@@ -19,9 +19,9 @@ function runDevBootstrap(): void {
         apiBaseUrl:
             import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000",
         tenantSlug:
-            import.meta.env.VITE_TENANT_SLUG ?? "dial-auto-group",
+            import.meta.env.VITE_TENANT_SLUG ?? "demo-tenant",
         locationSlug:
-            import.meta.env.VITE_LOCATION_SLUG ?? "jeep-of-chicago",
+            import.meta.env.VITE_LOCATION_SLUG ?? "demo-location",
     };
 
     void amqur.init(opts).catch((err: unknown) => {

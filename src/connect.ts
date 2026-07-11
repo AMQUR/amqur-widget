@@ -172,6 +172,11 @@ function clearConnectionState(): void {
     conversationId = null;
 }
 
+/** Clears in-memory JWT/bootstrap state (call from destroy()). */
+export function resetWidgetRuntime(): void {
+    clearConnectionState();
+}
+
 const DEBUG =
   typeof window !== "undefined" &&
   (window as Window & { __AMQUR_DEBUG__?: boolean }).__AMQUR_DEBUG__ === true;

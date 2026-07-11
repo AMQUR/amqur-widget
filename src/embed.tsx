@@ -1,9 +1,15 @@
 import { createRoot, type Root } from "react-dom/client";
-import { assertValidInitConfig, initConnection } from "./connect";
+import {
+  assertValidInitConfig,
+  initConnection,
+  resetWidgetRuntime,
+} from "./connect";
 import { WidgetProvider } from "./widget/WidgetContext";
 import { WidgetRoot } from "./widget/WidgetRoot";
 import themeCss from "./widget/theme.css?inline";
 import type { AmqurWidgetConfig } from "./widget/types";
+
+export const AMQUR_WIDGET_VERSION = "0.1.0";
 
 let reactRoot: Root | null = null;
 let bootstrapped = false;
@@ -17,6 +23,7 @@ function cleanupHost(): void {
   disposeReact();
   document.getElementById("amqur-widget-host")?.remove();
   bootstrapped = false;
+  resetWidgetRuntime();
 }
 
 function mount(host: HTMLElement) {
@@ -61,7 +68,7 @@ function appendErrorHost(message: string): void {
 
 async function bootstrap(options: AmqurInitOptions) {
   if (bootstrapped) {
-    console.warn("[AMQUR] init() called more than once; ignoring.");
+    console.warn("[AMQUR] init() called more than once; call destroy() first.");
     return;
   }
 
@@ -98,11 +105,17 @@ function destroy(): void {
   cleanupHost();
 }
 
+function isReady(): boolean {
+  return bootstrapped;
+}
+
 declare global {
   interface Window {
     AMQUR?: {
       init: (opts: AmqurInitOptions) => Promise<void>;
       destroy: () => void;
+      isReady: () => boolean;
+      version: string;
     };
   }
 }
@@ -110,4 +123,6 @@ declare global {
 window.AMQUR = {
   init: bootstrap,
   destroy,
+  isReady,
+  version: AMQUR_WIDGET_VERSION,
 };

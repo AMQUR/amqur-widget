@@ -42,6 +42,8 @@ function makeId(): string {
 
 export function ChatView() {
     const { bootstrap, config, conversationId } = useWidget();
+    const inventoryEnabled = bootstrap.features?.inventory !== false;
+    const paymentsEnabled = bootstrap.features?.payments !== false;
 
     const [messages, setMessages] = useState<Message[]>([
         {
@@ -53,8 +55,25 @@ export function ChatView() {
 
     const [input, setInput] = useState('');
     const [sending, setSending] = useState(false);
+    const [isOnline, setIsOnline] = useState(
+        typeof navigator !== 'undefined' ? navigator.onLine : true,
+    );
+    const [lastFailedUserText, setLastFailedUserText] = useState<string | null>(
+        null,
+    );
     const bottomRef = useRef<HTMLDivElement | null>(null);
     const inputRef = useRef<HTMLInputElement | null>(null);
+
+    useEffect(() => {
+        const on = () => setIsOnline(true);
+        const off = () => setIsOnline(false);
+        window.addEventListener('online', on);
+        window.addEventListener('offline', off);
+        return () => {
+            window.removeEventListener('online', on);
+            window.removeEventListener('offline', off);
+        };
+    }, []);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -64,9 +83,22 @@ export function ChatView() {
         async (text?: string, opts?: { action?: string; vin?: string }) => {
             const userText = (text ?? input).trim();
             if (!userText || sending) return;
+            if (!isOnline) {
+                setMessages((prev) => [
+                    ...prev,
+                    {
+                        id: makeId(),
+                        role: 'assistant',
+                        text: 'You appear to be offline. Reconnect and try again.',
+                        isError: true,
+                    },
+                ]);
+                return;
+            }
 
             setInput('');
             setSending(true);
+            setLastFailedUserText(null);
 
             const userMsg: Message = {
                 id: makeId(),
@@ -94,25 +126,34 @@ export function ChatView() {
                     downPayment?: number;
                     vehicleVin?: string;
                     price?: number;
+                    provenance?: { disclaimer?: string };
                 };
 
                 let assistantMsg: Message;
 
-                if (data.type === 'vehicle_detail' && data.vehicle) {
+                if (
+                    data.type === 'vehicle_detail' &&
+                    data.vehicle &&
+                    inventoryEnabled
+                ) {
                     assistantMsg = {
                         id: makeId(),
                         role: 'assistant',
                         text: typeof data.reply === 'string' ? data.reply : undefined,
                         vehicles: [data.vehicle as Vehicle],
                     };
-                } else if (data.type === 'vehicle_carousel' || data.type === 'vehicle_compare') {
+                } else if (
+                    (data.type === 'vehicle_carousel' ||
+                        data.type === 'vehicle_compare') &&
+                    inventoryEnabled
+                ) {
                     assistantMsg = {
                         id: makeId(),
                         role: 'assistant',
                         text: typeof data.reply === 'string' ? data.reply : undefined,
                         vehicles: Array.isArray(data.vehicles) ? data.vehicles : [],
                     };
-                } else if (data.type === 'payment_summary') {
+                } else if (data.type === 'payment_summary' && paymentsEnabled) {
                     assistantMsg = {
                         id: makeId(),
                         role: 'assistant',
@@ -140,6 +181,7 @@ export function ChatView() {
             } catch (e) {
                 const msg =
                     e instanceof Error ? e.message : 'Something went wrong. Please try again.';
+                setLastFailedUserText(userText);
 
                 setMessages((prev) => [
                     ...prev,
@@ -152,11 +194,10 @@ export function ChatView() {
                 ]);
             } finally {
                 setSending(false);
-                // Refocus input after response
                 setTimeout(() => inputRef.current?.focus(), 50);
             }
         },
-        [input, sending, config, conversationId],
+        [input, sending, config, conversationId, isOnline, inventoryEnabled, paymentsEnabled],
     );
 
     // Auto-send with a specific text (used by vehicle card buttons)
@@ -223,7 +264,7 @@ export function ChatView() {
                         )}
 
                         {/* ── Payment summary card ── */}
-                        {msg.payment && (
+                        {paymentsEnabled && msg.payment && (
                             <div style={{ clear: 'both', marginTop: msg.text ? '8px' : 0 }}>
                                 <div
                                     style={{
@@ -276,22 +317,56 @@ export function ChatView() {
                         )}
 
                         {/* ── Vehicle carousel ── */}
-                        {msg.vehicles && msg.vehicles.length > 0 && (
+                        {inventoryEnabled && msg.vehicles && msg.vehicles.length > 0 && (
                             <div style={{ clear: 'both', marginTop: msg.text ? '10px' : 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                 {msg.vehicles.map((v) => (
                                     <VehicleCard
                                         key={v.vin}
                                         vehicle={v}
                                         onAction={quickSend}
+                                        paymentsEnabled={paymentsEnabled}
                                     />
                                 ))}
                             </div>
                         )}
 
                         {/* Clearfix */}
+                        {msg.isError && lastFailedUserText && (
+                            <div style={{ clear: 'both', marginTop: '8px' }}>
+                                <button
+                                    type="button"
+                                    style={btnStyle('secondary')}
+                                    onClick={() => {
+                                        const t = lastFailedUserText;
+                                        setLastFailedUserText(null);
+                                        void sendMessage(t);
+                                    }}
+                                    disabled={sending || !isOnline}
+                                    aria-label="Retry last message"
+                                >
+                                    Retry
+                                </button>
+                            </div>
+                        )}
+
                         <div style={{ clear: 'both' }} />
                     </div>
                 ))}
+
+                {!isOnline && (
+                    <div
+                        role="status"
+                        style={{
+                            fontSize: '13px',
+                            padding: '8px 12px',
+                            background: 'rgba(180,80,0,0.08)',
+                            borderRadius: '8px',
+                            marginBottom: '8px',
+                        }}
+                    >
+                        You are offline. Messages will send when connectivity returns.
+                    </div>
+                )}
 
                 {/* ── Typing indicator ── */}
                 {sending && (
@@ -358,9 +433,11 @@ export function ChatView() {
 function VehicleCard({
     vehicle: v,
     onAction,
+    paymentsEnabled = true,
 }: {
     vehicle: Vehicle;
     onAction: (text: string, opts?: { action?: string; vin?: string }) => void;
+    paymentsEnabled?: boolean;
 }) {
     const title = [v.year, v.make, v.model].filter(Boolean).join(' ');
     const isHeld = v.status === 'HOLD';
@@ -447,6 +524,7 @@ function VehicleCard({
                     >
                         View details
                     </button>
+                    {paymentsEnabled && (
                     <button
                         type="button"
                         style={btnStyle('secondary')}
@@ -459,6 +537,7 @@ function VehicleCard({
                     >
                         Payment
                     </button>
+                    )}
                     <button
                         type="button"
                         style={btnStyle('ghost')}
