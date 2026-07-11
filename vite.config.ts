@@ -16,7 +16,9 @@ export default defineConfig({
   build: {
     lib: {
       entry: "src/embed.tsx",
-      name: "AMQUR",
+      // Must NOT be "AMQUR" — Vite assigns `var <name> = …` and would overwrite
+      // window.AMQUR that embed.tsx sets with { init, destroy, isReady }.
+      name: "AmqurWidgetBundle",
       fileName: "amqur-widget",
       formats: ["iife"],
     },

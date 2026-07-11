@@ -11,6 +11,12 @@ node_modules
 dist
 dist-ssr
 *.local
+test-results
+playwright-report
+blob-report
+staging/dist
+staging/public
+.railway
 
 # Editor directories and files
 .vscode/*
@@ -22,3 +28,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Keep staging static publish tree uploadable to Railway
+!staging/public/
+!staging/public/**
