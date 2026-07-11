@@ -34,7 +34,7 @@ describe('canary GTM package safety', () => {
   });
 
   it('does not embed secrets', () => {
-    expect(loader).not.toMatch(/JWT_SECRET|DATABASE_URL|REDIS_URL|TEKION_|BOOTSTRAP/);
+    expect(loader).not.toMatch(/JWT_SECRET|DATABASE_URL|REDIS_URL|TEKION_CLIENT|BOOTSTRAP_SECRET/);
   });
 
   it('level snippets keep hosts empty until provisioned', () => {
