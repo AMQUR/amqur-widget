@@ -10,16 +10,23 @@
 
 | Check | Result |
 |---|---|
-| `gcloud` CLI | INSTALLED (575.0.1) |
-| Application Default Credentials | absent until OAuth completes |
-| GTM API auth | OAuth **initiated** (readonly + edit.containers; **publish scope not requested**); awaiting operator browser approval |
+| Stock Cloud SDK OAuth + Tag Manager scopes | **UNSUPPORTED** — Google blocked (“This app is blocked”); do **not** retry |
+| `gcloud` CLI | May be installed for unrelated Cloud use; **not** a supported GTM auth path |
+| Application Default Credentials for GTM | Absent / not used |
+| Direct tagmanager.google.com session | **Required** — official Sign-in shown; no authenticated Jeep of Chicago session verified yet |
+| Org-controlled OAuth client (Path B) | Requirements prepared in backend `docs/integrations/GTM_ORG_OAUTH_CLIENT_REQUIREMENTS.md` — not approved yet |
 | Keychain GTM/TeamVelocity secrets | not found for GTM API |
 | Railway GTM vars | absent on staging |
 | GitHub Actions GTM secrets | absent |
 | Unpublished workspace / Preview | **not created** |
 | Public container publish | **not attempted** |
 
-**Unavoidable authorization required:** Google account with Jeep of Chicago container access (Preview + edit; publish later), or TeamVelocity ticket (see sibling doc).  
+**Approved authorization paths only:**
+
+1. Direct authorized access via [tagmanager.google.com](https://tagmanager.google.com) (Path A)  
+2. Organization-controlled OAuth client approved for Tag Manager read/edit (Path B)  
+3. TeamVelocity / Apollo deployment assistance (Path C — sibling doc)
+
 Tracking: https://github.com/AMQUR/amqur-widget/issues/6
 
 ## Observed public GTM containers
