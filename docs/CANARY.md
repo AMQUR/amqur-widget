@@ -1,7 +1,9 @@
-# Canary install — Jeep of Chicago
+# Canary — Jeep of Chicago
 
-See backend `config/canary-jeep-of-chicago.json` and `docs/canary-gtm-snippet.html`.
+See:
+- `docs/deployment/jeep-of-chicago-gtm-canary.md`
+- `docs/deployment/jeep-of-chicago-teamvelocity-request.md`
+- `docs/deployment/snippets/` (levels 0–5)
+- `docs/deployment/amqur-canary-loader.js`
 
-**Do not enable on other Dial sites until this rooftop completes phases 1–6.**
-
-Installation requires authenticated GTM access (not available in this automation run).
+**Not installed on live sites.** Public inventory disabled until authorized live feed exists.

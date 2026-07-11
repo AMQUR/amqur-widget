@@ -1,0 +1,17 @@
+<!--
+  Level 2 — ~1% canary (stable bucket)
+  Enable only after Level 1 passes + handoff + alerts + non-inventory feature set approved.
+  Public inventory MUST remain disabled server-side (no live vAuto).
+-->
+<script>
+window.__AMQUR_CANARY_CFG__ = {
+  mode: 'canary',
+  percent: 1,
+  allowedHosts: ['www.jeepofchicago.com', 'jeepofchicago.com'],
+  apiBaseUrl: '', /* set provisioned HTTPS API origin */
+  assetUrl: '',   /* set version-pinned HTTPS IIFE URL */
+  requireConsent: false,
+  sri: ''
+};
+</script>
+<script src="/* approved CDN /amqur-canary-loader.js */" async></script>
