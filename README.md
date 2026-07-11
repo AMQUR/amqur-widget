@@ -1,73 +1,68 @@
-# React + TypeScript + Vite
+# AMQUR Widget
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Embeddable dealership chat assistant (React + Vite + Shadow DOM).
 
-Currently, two official plugins are available:
+## Install on a dealership site
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```html
+<script src="https://YOUR_CDN/amqur-widget.iife.js" defer></script>
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    window.AMQUR.init({
+      apiBaseUrl: 'https://YOUR_API_HOST', // /api is appended automatically
+      tenantSlug: 'demo-motors',
+      locationSlug: 'main',
+    });
+  });
+</script>
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Lifecycle:
 
 ```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+await window.AMQUR.init({ ... });
+window.AMQUR.destroy(); // unmount + cleanup
 ```
+
+## Local development
+
+```bash
+cp .env.example .env
+npm install
+npm run dev
+```
+
+Build IIFE bundle:
+
+```bash
+npm run build
+# → dist/amqur-widget.iife.js
+```
+
+## Backend contract
+
+| Step | Endpoint | Auth |
+|------|----------|------|
+| Bootstrap | `GET /api/public/widget-config?tenantSlug=&locationSlug=` | none |
+| Token | `POST /api/public/widget-token` `{ tenantSlug, locationSlug }` | none |
+| Chat | `POST /api/chat` `{ message, conversationId?, action?, vin? }` | Bearer widget JWT |
+
+Handled response types: text `reply`, `vehicle_carousel`, `vehicle_compare`, `vehicle_detail`, `payment_summary`.
+
+Conversation identity is stored in `localStorage` per tenant+location and sent as `conversationId`.
+
+## Features
+
+- Shadow DOM style isolation
+- Tenant branding (`primaryColor`, `accentColor`, logo)
+- Feature flag `features.chat` (inventory/payments cards still gated by backend replies)
+- JWT refresh on 401
+- Escape closes panel; dialog semantics + aria-live message log
+- Online/offline indicator
+- Structured vehicle actions (`action` + `vin`) for details / payment / hold
+
+## Security notes
+
+- No API secrets in the widget; only short-lived widget JWTs in memory
+- Host page can still pierce open Shadow DOM — expected for embeds
+- Validate `apiBaseUrl` is your API origin; set backend `CORS_ORIGINS` in production

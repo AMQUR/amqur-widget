@@ -1,4 +1,5 @@
-:root {
+/* Variables on .amqur so they apply inside Shadow DOM (:root would target the document). */
+.amqur {
     /* Tenant-configurable */
     --amqur-primary: #111111;
     --amqur-accent: #ffffff;
@@ -62,6 +63,9 @@
 .amqur-panel {
     width: 380px;
     max-height: 80vh;
+    height: min(560px, 80vh);
+    display: flex;
+    flex-direction: column;
     border-radius: var(--amqur-radius-panel);
     background: var(--amqur-bg);
     border: 1px solid var(--amqur-border);
@@ -145,10 +149,20 @@
 
 /* Body */
 .amqur-body {
+    flex: 1;
+    min-height: 0;
     padding: 14px;
     display: flex;
     flex-direction: column;
     gap: 12px;
+}
+
+.amqur-chat-root {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .amqur-prompt {
@@ -283,4 +297,13 @@
 
 .amqur-inlinebtn:hover {
     text-decoration: underline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .amqur-launcher,
+    .amqur-panel,
+    .amqur-skelbar {
+        animation: none !important;
+        transition: none !important;
+    }
 }

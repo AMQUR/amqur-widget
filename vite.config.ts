@@ -8,6 +8,11 @@ export default defineConfig({
     "process.env": {}, // <-- fixes "process is not defined"
   },
 
+  server: {
+    port: 5173,
+    strictPort: false,
+  },
+
   build: {
     lib: {
       entry: "src/embed.tsx",
