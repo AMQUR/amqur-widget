@@ -13,7 +13,8 @@
 | Stock Cloud SDK OAuth + Tag Manager scopes | **UNSUPPORTED** — Google blocked (“This app is blocked”); do **not** retry |
 | `gcloud` CLI | May be installed for unrelated Cloud use; **not** a supported GTM auth path |
 | Application Default Credentials for GTM | Absent / not used |
-| Direct tagmanager.google.com session | **Required** — official Sign-in shown; no authenticated Jeep of Chicago session verified yet |
+| Direct Google auth (Path A) | **Succeeded** (redacted) — Jeep of Chicago **Google tags** visible: `G-VPK5NDXW9G`, `GT-KDDGB74T` (**not** GTM containers; do not modify) |
+| GTM Accounts container `GTM-MP5XGBXQ` | **Not accessible / not listed** — current account lacks GTM container access |
 | Org-controlled OAuth client (Path B) | Requirements prepared in backend `docs/integrations/GTM_ORG_OAUTH_CLIENT_REQUIREMENTS.md` — not approved yet |
 | Keychain GTM/TeamVelocity secrets | not found for GTM API |
 | Railway GTM vars | absent on staging |
