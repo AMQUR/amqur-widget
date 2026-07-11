@@ -6,16 +6,21 @@
 
 ## Access discovery (this machine)
 
+**Updated:** 2026-07-11
+
 | Check | Result |
 |---|---|
-| `gcloud` CLI | UNAVAILABLE |
-| Application Default Credentials | absent |
-| GTM API auth | absent |
-| Keychain GTM/TeamVelocity secrets | not found (AMQUR Staging JWT/Bootstrap only; “Dial Jeep Corp” label observed elsewhere but not usable as GTM API) |
-| Railway GTM vars | absent |
+| `gcloud` CLI | INSTALLED (575.0.1) |
+| Application Default Credentials | absent until OAuth completes |
+| GTM API auth | OAuth **initiated** (readonly + edit.containers; **publish scope not requested**); awaiting operator browser approval |
+| Keychain GTM/TeamVelocity secrets | not found for GTM API |
+| Railway GTM vars | absent on staging |
 | GitHub Actions GTM secrets | absent |
+| Unpublished workspace / Preview | **not created** |
+| Public container publish | **not attempted** |
 
-**Unavoidable authorization required:** Google account with publish rights on the observed GTM containers, or TeamVelocity ticket (see sibling doc).
+**Unavoidable authorization required:** Google account with Jeep of Chicago container access (Preview + edit; publish later), or TeamVelocity ticket (see sibling doc).  
+Tracking: https://github.com/AMQUR/amqur-widget/issues/6
 
 ## Observed public GTM containers
 
