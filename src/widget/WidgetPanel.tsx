@@ -51,6 +51,7 @@ export function WidgetPanel({
       role="dialog"
       aria-modal="true"
       aria-label={`${locationName} assistant`}
+      style={{ position: 'relative' }}
     >
       <div
         className="amqur-header"

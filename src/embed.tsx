@@ -9,7 +9,7 @@ import { WidgetRoot } from "./widget/WidgetRoot";
 import themeCss from "./widget/theme.css?inline";
 import type { AmqurWidgetConfig } from "./widget/types";
 
-export const AMQUR_WIDGET_VERSION = "0.1.0";
+export const AMQUR_WIDGET_VERSION = "0.2.0";
 
 let reactRoot: Root | null = null;
 let bootstrapped = false;
