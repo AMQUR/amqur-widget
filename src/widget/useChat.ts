@@ -4,7 +4,7 @@ import { sendChatFromWidget } from './chatAdapter';
 import { useWidget } from './WidgetContext';
 
 export function useChat() {
-    const { config } = useWidget();
+    const { config, conversationId } = useWidget();
 
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [loading, setLoading] = useState(false);
@@ -25,6 +25,7 @@ export function useChat() {
                 apiBaseUrl: config.apiBaseUrl,
                 jwtToken: config.jwtToken,
                 userInput: text,
+                conversationId,
             });
 
             setMessages(prev => [...prev, assistantMsg]);
