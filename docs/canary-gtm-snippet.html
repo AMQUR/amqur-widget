@@ -1,0 +1,30 @@
+<!--
+  AMQUR canary install snippet — Jeep of Chicago ONLY
+  Install via Google Tag Manager Custom HTML tag (async).
+  Do NOT paste onto other Dial Auto Group sites.
+  Replace __AMQUR_WIDGET_CDN__ and __AMQUR_API_BASE__ after production hosts exist.
+  Keep canary percentage control in GTM trigger (employee allowlist → % traffic).
+-->
+<script>
+(function () {
+  if (window.__AMQUR_CANARY_BOOTSTRAPPED__) return;
+  window.__AMQUR_CANARY_BOOTSTRAPPED__ = true;
+
+  var s = document.createElement('script');
+  s.async = true;
+  s.src = '__AMQUR_WIDGET_CDN__/widget/canary/amqur-widget.iife.js';
+  s.onload = function () {
+    if (!window.AMQUR || typeof window.AMQUR.init !== 'function') {
+      console.error('[AMQUR] widget API missing');
+      return;
+    }
+    window.AMQUR.init({
+      apiBaseUrl: '__AMQUR_API_BASE__/api',
+      tenantSlug: 'dial-auto-group',
+      locationSlug: 'jeep-of-chicago',
+      locale: 'en'
+    });
+  };
+  document.head.appendChild(s);
+})();
+</script>
