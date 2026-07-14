@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AMQUR Internal Canary Redeem — STAGING</title>
+    <style>
+      body {
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        max-width: 40rem;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        line-height: 1.5;
+        background: #0f1419;
+        color: #e8eef4;
+      }
+      .banner {
+        background: #5c2b00;
+        color: #fff4e5;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+      }
+      label {
+        display: block;
+        margin: 1rem 0 0.35rem;
+        font-size: 0.9rem;
+      }
+      input,
+      button {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.65rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid #3a4754;
+        background: #1a222b;
+        color: inherit;
+      }
+      button {
+        margin-top: 1.25rem;
+        background: #2a6f97;
+        border-color: #2a6f97;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      pre {
+        white-space: pre-wrap;
+        background: #1a222b;
+        padding: 0.75rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+      }
+      .note {
+        font-size: 0.85rem;
+        color: #9aa8b5;
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="banner">STAGING — NOT FOR CUSTOMERS · INTERNAL EMPLOYEE CANARY ONLY</div>
+    <h1>Redeem canary invite</h1>
+    <p>
+      Paste a one-time invite issued by staff (<code>POST /api/canary/invites</code>).
+      This page sets an HttpOnly Secure cookie on the API host. Do not paste tokens into
+      Apollo, GTM, or public pages.
+    </p>
+    <label for="api">API base (staging)</label>
+    <input
+      id="api"
+      value="https://backend-staging-staging-b699.up.railway.app"
+      autocomplete="off"
+    />
+    <label for="token">Invite token</label>
+    <input id="token" type="password" autocomplete="off" placeholder="paste invite JWT" />
+    <button type="button" id="go">Redeem</button>
+    <pre id="out">Ready.</pre>
+    <p class="note">
+      After redeem, open Jeep pages only with Apollo pixel still disabled until approval
+      gates pass. Public sessions without this cookie remain denied.
+    </p>
+    <script>
+      document.getElementById('go').addEventListener('click', async function () {
+        var out = document.getElementById('out');
+        var api = document.getElementById('api').value.replace(/\/$/, '');
+        var root = /\/api$/i.test(api) ? api : api + '/api';
+        var inviteToken = document.getElementById('token').value.trim();
+        out.textContent = 'Redeeming…';
+        try {
+          var res = await fetch(root + '/public/canary-redeem', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({ inviteToken: inviteToken }),
+          });
+          var body = await res.json().catch(function () {
+            return {};
+          });
+          if (!res.ok) {
+            out.textContent = 'Failed ' + res.status + ': ' + JSON.stringify(body);
+            return;
+          }
+          out.textContent =
+            'OK — session cookie set for ' +
+            (body.tenantSlug || '?') +
+            '/' +
+            (body.locationSlug || '?') +
+            ' env=' +
+            (body.environment || '?') +
+            ' ttl=' +
+            (body.expiresInSec || '?') +
+            's';
+        } catch (e) {
+          out.textContent = 'Network error: ' + (e && e.message);
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -125,6 +125,7 @@ async function fetchWidgetToken(
         try {
             const tokenRes = await fetch(`${apiBaseUrl}/public/widget-token`, {
                 method: "POST",
+                credentials: "include",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     tenantSlug,

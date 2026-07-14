@@ -18,9 +18,9 @@
   var TENANT = 'dial-auto-group';
   var LOCATION = 'jeep-of-chicago';
   var KILL_QS = 'amqur_canary_kill';
-  var EMP_QS = 'amqur_employee';
-  var EMP_COOKIE = 'amqur_emp';
   var BUCKET_KEY = 'amqur_canary_bucket_v1';
+  // Employee gate: backend-issued HttpOnly cookie only (name: amqur_canary_emp).
+  // Never trust a client-writable boolean employee flag cookie or query-string tokens.
 
   function log(level, event, detail) {
     try {
@@ -56,39 +56,34 @@
     return false;
   }
 
-  function cookieHas(name) {
-    try {
-      return document.cookie.split(';').some(function (c) {
-        return c.trim().indexOf(name + '=1') === 0;
-      });
-    } catch (_) {
-      return false;
-    }
+  function apiRoot() {
+    var base = API_BASE.replace(/\/$/, '');
+    return /\/api$/i.test(base) ? base : base + '/api';
   }
 
-  /** Employee gate: requires cookie set by authenticated test page OR one-time hashed token check via CFG.employeeTokenHash */
+  /**
+   * Employee gate (fail closed): ask staging/backend if the HttpOnly
+   * signed canary cookie is valid for this tenant/rooftop/origin.
+   * Cookie is never readable from JS and must not appear in Apollo/GTM.
+   */
   function employeeAllowed() {
-    if (cookieHas(EMP_COOKIE)) return true;
-    var token = qs(EMP_QS);
-    if (!token || !CFG.employeeTokenHash) return false;
-    // Compare SHA-256 hex of token to configured hash (no plaintext secret in snippet).
-    return sha256Hex(token).then(function (hex) {
-      return hex === String(CFG.employeeTokenHash).toLowerCase();
-    });
-  }
-
-  function sha256Hex(text) {
-    if (!window.crypto || !window.crypto.subtle) {
-      return Promise.resolve('');
-    }
-    var data = new TextEncoder().encode(text);
-    return window.crypto.subtle.digest('SHA-256', data).then(function (buf) {
-      return Array.from(new Uint8Array(buf))
-        .map(function (b) {
-          return b.toString(16).padStart(2, '0');
-        })
-        .join('');
-    });
+    if (!API_BASE) return Promise.resolve(false);
+    return fetch(apiRoot() + '/public/canary-eligibility', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ tenantSlug: TENANT, locationSlug: LOCATION }),
+    })
+      .then(function (res) {
+        if (!res.ok) return false;
+        return res.json();
+      })
+      .then(function (body) {
+        return !!(body && body.eligible === true);
+      })
+      .catch(function () {
+        return false;
+      });
   }
 
   function stableBucket() {

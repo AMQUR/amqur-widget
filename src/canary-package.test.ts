@@ -21,10 +21,16 @@ describe('canary GTM package safety', () => {
     expect(loader).toContain('duplicate_blocked');
   });
 
-  it('supports stable canary bucketing and employee gate', () => {
+  it('supports stable canary bucketing and secure employee eligibility gate', () => {
     expect(loader).toContain('BUCKET_KEY');
     expect(loader).toContain('employee_gate_denied');
-    expect(loader).toContain('sha256');
+    expect(loader).toContain('canary-eligibility');
+    expect(loader).toContain("credentials: 'include'");
+    // Must not treat client-writable boolean employee flag as authorization.
+    expect(loader).not.toMatch(/\bEMP_COOKIE\b/);
+    expect(loader).not.toContain('employeeTokenHash');
+    expect(loader).not.toMatch(/document\.cookie.*amqur_emp|amqur_emp['"]?\s*===?\s*['"]?1/);
+    expect(loader).toContain('amqur_canary'); // cookie family name appears in comments/events only via canary-eligibility path
   });
 
   it('fails closed on missing or placeholder hosts', () => {
