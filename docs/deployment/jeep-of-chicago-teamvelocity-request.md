@@ -1,9 +1,12 @@
 # TeamVelocity / Apollo — Jeep of Chicago script request
 
-**Status:** Path C **selected**. Apollo Tracking Pixel **AMQUR Internal Employee Canary** manually saved with **Is Enabled = False** (2026-07-14).
+**Status:** Path C **selected**. Apollo Tracking Pixel **AMQUR Internal Employee Canary** manually saved with **Is Enabled = False** (revalidated 2026-07-14).
 
-**Do not enable** the pixel until: secure employee canary auth is live on staging, handoff/`CRM_WEBHOOK_URL` verified, and business approval signed.  
-**Do not** also install the same loader via GTM-MP5XGBXQ.
+**Do not enable** until: (1) handoff destination set securely + synthetic handoff passes (backend#8), (2) signed business approval.  
+**Do not** also install via GTM-MP5XGBXQ.
+
+Handoff authorization request (dealership ops): `backend/docs/dealership-knowledge/JEEP_OF_CHICAGO_HANDOFF_AUTHORIZATION_REQUEST.md`  
+Approval package: `backend/docs/JEEP_OF_CHICAGO_INTERNAL_CANARY_APPROVAL.md`
 
 ## Apollo entry (verify — keep disabled)
 
