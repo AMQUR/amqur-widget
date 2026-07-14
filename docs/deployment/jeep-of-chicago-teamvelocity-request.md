@@ -1,9 +1,25 @@
-# TeamVelocity / dealer.com — Jeep of Chicago script request
+# TeamVelocity / Apollo — Jeep of Chicago script request
 
-**Status:** Template ready — **not submitted** (no TeamVelocity API, portal credential, or verified CSM channel on this machine)
+**Status:** Path C **selected**. Apollo Tracking Pixel **AMQUR Internal Employee Canary** manually saved with **Is Enabled = False** (2026-07-14).
 
-**Path role:** Path C when Path A (tagmanager.google.com) and Path B (org OAuth client) are unavailable.  
-Stock Cloud SDK GTM OAuth is **unsupported** — do not use it as a substitute.
+**Do not enable** the pixel until: secure employee canary auth is live on staging, handoff/`CRM_WEBHOOK_URL` verified, and business approval signed.  
+**Do not** also install the same loader via GTM-MP5XGBXQ.
+
+## Apollo entry (verify — keep disabled)
+
+| Field | Expected |
+|---|---|
+| Website | www.jeepofchicago.com |
+| Tag name | AMQUR Internal Employee Canary |
+| Placement | All Pages Body |
+| Vendor | Other |
+| Include on Iframes | False |
+| Exclude from conversion pages | False |
+| **Is Enabled** | **False** |
+| Loader | `https://widget-staging-staging.up.railway.app/amqur-canary-loader.js` |
+| Widget asset | `https://widget-staging-staging.up.railway.app/amqur-widget.1e34c88.iife.js` |
+| API | `https://backend-staging-staging-b699.up.railway.app` |
+| Pixel ID | Record from Apollo UI if visible (no secrets) |
 
 ## Request summary
 
@@ -12,50 +28,37 @@ Stock Cloud SDK GTM OAuth is **unsupported** — do not use it as a substitute.
 | Dealership | Jeep of Chicago / CDJR of Chicago |
 | Domain | https://www.jeepofchicago.com |
 | Dealer code (observed public) | `chryslerdodgejeepramofchicagoilcllc` |
-| Environment | Production canary (start unpublished / employees only) |
-| Script placement | Site-wide footer or tag manager equivalent |
+| Environment | Staging-backed employee canary only (Apollo disabled until gates) |
+| Script placement | Apollo Tracking Pixel · All Pages Body |
 | Async/defer | **async required**; must not block render |
-| Page scope | All public pages on jeepofchicago.com hostnames only |
+| Page scope | jeepofchicago.com hostnames only |
 | Tenant slug | `dial-auto-group` |
 | Location slug | `jeep-of-chicago` |
-| Widget asset URL | **TBD — provisioned HTTPS CDN only** |
-| API base URL | **TBD — provisioned HTTPS API only** |
-| CSP | No CSP header observed 2026-07-11; if CSP added, allow script-src + connect-src for API/CDN hosts |
-| Consent | No CMP detected on public homepage; revisit if CMP added |
-| Duplicate chat risk | Existing chat/messaging fingerprints observed — coordinate z-index and single-assistant policy |
+| Employee gate | Backend signed HttpOnly cookie + `/api/public/canary-eligibility` — **never** client-writable flags in Apollo |
 
 ## Script requirements
 
 1. Load `amqur-canary-loader.js` asynchronously from approved CDN.  
-2. Set `window.__AMQUR_CANARY_CFG__` per level docs before loader.  
+2. Set `window.__AMQUR_CANARY_CFG__` per level docs before loader (mode `employee` for Level 1).  
 3. Hostname allowlist enforced in loader.  
 4. Kill switch: `?amqur_canary_kill=1` or localStorage.  
-5. No secrets in page source.  
+5. No secrets / no invite tokens / no canary session JWTs in Apollo payload.  
 
 ## Rollback
 
-Remove or disable the AMQUR script entry in TeamVelocity; confirm network shows no AMQUR asset requests within 5 minutes.
+Disable or remove the AMQUR Apollo Tracking Pixel; confirm network shows no AMQUR asset requests within 5 minutes. Server kill: `CANARY_EMPLOYEE_ENABLED=false`.
 
-## Test plan (after install in non-public preview if available)
+## Test plan (Apollo still disabled — use staging redeem host)
 
+- [ ] Redeem invite on staging `/canary-redeem.html`  
+- [ ] Eligibility succeeds only with valid cookie + Jeep/staging allowlisted Origin  
+- [ ] Public session without cookie denied  
+- [ ] Forged / expired / wrong tenant-rooftop-env fail  
 - [ ] Wrong host does not initialize  
-- [ ] Duplicate load safe  
-- [ ] Token Origin restricted  
-- [ ] Inventory features disabled in public mode  
-- [ ] Tekion/vAuto remain off  
-- [ ] Handoff destination receives **approved test** only  
-- [ ] Mobile layout OK  
-- [ ] No CWV regression beyond agreed budget  
+- [ ] Inventory / Tekion / vAuto remain off  
+- [ ] Handoff destination receives **approved test** only (after #8)  
 
-## Technical contacts (fill before submit)
-
-| Role | Name | Email |
-|---|---|---|
-| AMQUR engineering | | |
-| Dealership digital | | |
-| TeamVelocity CSM | | |
-
-## Exact support email body
+## Exact support email body (historical template)
 
 ```
 Subject: Script install request — AMQUR canary — jeepofchicago.com ONLY
@@ -74,4 +77,4 @@ Rollback: remove the script entry.
 Contact: <AMQUR engineering email>
 ```
 
-**Do not invent a TeamVelocity API.** Prefer GTM if the dealership grants container publish access first.
+Apollo UI path supersedes email when available. Prefer keeping pixel disabled until gates pass.
