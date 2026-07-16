@@ -36,9 +36,21 @@ export type WidgetBootstrapResult = {
     };
 
     branding: {
+        assistantDisplayName?: string;
+        welcomeMessage?: string;
         primaryColor: string;
         accentColor: string;
         logoUrl: string | null;
+        launcherIconUrl?: string | null;
+        phone?: string | null;
+        websiteUrl?: string | null;
+        privacyUrl?: string | null;
+        termsUrl?: string | null;
+        escalationMessage?: string;
+        disclaimerText?: string;
+        salesEnabled?: boolean;
+        serviceEnabled?: boolean;
+        partsEnabled?: boolean;
     };
 
     features: WidgetFeatures;
@@ -48,4 +60,6 @@ export type WidgetBootstrapResult = {
         signals?: string[];
     };
     locales?: string[];
+    consentText?: string | null;
+    configVersion?: number;
 };

@@ -50,13 +50,14 @@ function makeId(): string {
 
 export function ChatView() {
     const { bootstrap, config, conversationId } = useWidget();
-    const inventoryEnabled = bootstrap.features?.inventory !== false;
-    const paymentsEnabled = bootstrap.features?.payments !== false;
-    const compareEnabled = bootstrap.features?.vehicleCompare !== false;
-    const savedEnabled = bootstrap.features?.savedVehicles !== false;
-    const serviceEnabled = bootstrap.features?.serviceAi !== false;
-    const partsEnabled = bootstrap.features?.partsAi !== false;
-    const multilingual = bootstrap.features?.multilingual !== false;
+    // Fail-closed: only show dealership-specific UI when explicitly enabled.
+    const inventoryEnabled = bootstrap.features?.inventory === true;
+    const paymentsEnabled = bootstrap.features?.payments === true;
+    const compareEnabled = bootstrap.features?.vehicleCompare === true;
+    const savedEnabled = bootstrap.features?.savedVehicles === true;
+    const serviceEnabled = bootstrap.features?.serviceAi === true;
+    const partsEnabled = bootstrap.features?.partsAi === true;
+    const multilingual = bootstrap.features?.multilingual === true;
 
     const [locale, setLocale] = useState<Locale>(() =>
         detectLocale(config.locale ?? bootstrap.locales?.[0]),

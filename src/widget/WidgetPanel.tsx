@@ -35,7 +35,7 @@ export function WidgetPanel({
   const primaryColor = branding?.primaryColor || '#111111';
   const logoUrl = branding?.logoUrl;
   const locationName = location?.name || 'Dealership Assistant';
-  const chatEnabled = features?.chat !== false;
+  const chatEnabled = features?.chat === true;
 
   useEffect(() => {
     if (open) {

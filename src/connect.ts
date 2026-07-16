@@ -247,6 +247,10 @@ export async function initConnection(config: AmqurWidgetConfig) {
             location: bootstrapData.location,
             branding: bootstrapData.branding,
             features: bootstrapData.features,
+            proactive: bootstrapData.proactive,
+            locales: bootstrapData.locales,
+            consentText: bootstrapData.consentText,
+            configVersion: bootstrapData.configVersion,
         };
 
         log("widget-config loaded for:", widgetBootstrap.location.name);
