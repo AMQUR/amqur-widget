@@ -28,7 +28,8 @@ export default defineConfig({
       // Must NOT be "AMQUR" — Vite assigns `var <name> = …` and would overwrite
       // window.AMQUR that embed.tsx sets with { init, destroy, isReady }.
       name: "AmqurWidgetBundle",
-      fileName: "amqur-widget",
+      // Vendor-neutral public filename for Dial Us Now / tenant CDNs.
+      fileName: "assistant-widget",
       formats: ["iife"],
     },
   },

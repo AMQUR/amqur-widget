@@ -10,7 +10,9 @@
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:staging": "playwright test"
+    "test:staging": "playwright test",
+    "test:local": "playwright test",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "react": "^19.2.0",

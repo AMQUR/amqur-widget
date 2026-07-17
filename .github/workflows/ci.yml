@@ -51,9 +51,13 @@ jobs:
       - name: IIFE inspection
         run: |
           set -euo pipefail
-          test -f dist/amqur-widget.iife.js
-          head -c 40 dist/amqur-widget.iife.js | grep -q 'AmqurWidgetBundle'
-          if rg -n 'JWT_SECRET|DATABASE_URL|BOOTSTRAP_SECRET|TEKION_CLIENT_SECRET|sk-ant-|BEGIN PRIVATE KEY' dist/amqur-widget.iife.js; then
+          test -f dist/assistant-widget.iife.js
+          head -c 40 dist/assistant-widget.iife.js | grep -q 'AmqurWidgetBundle'
+          if head -c 80 dist/assistant-widget.iife.js | grep -q 'var AMQUR='; then
+            echo "IIFE overwrites window.AMQUR — refuse" >&2
+            exit 1
+          fi
+          if rg -n 'JWT_SECRET|DATABASE_URL|BOOTSTRAP_SECRET|TEKION_CLIENT_SECRET|sk-ant-|BEGIN PRIVATE KEY' dist/assistant-widget.iife.js; then
             echo "IIFE secret scan FAILED" >&2
             exit 1
           fi

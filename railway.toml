@@ -1,7 +1,9 @@
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile.staging"
+dockerfilePath = "Dockerfile"
 
 [deploy]
 healthcheckPath = "/"
+healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
