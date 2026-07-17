@@ -23,14 +23,14 @@ export type WidgetFeatures = {
 };
 
 export type WidgetBootstrapResult = {
+    // Public contract: the backend intentionally exposes no internal database
+    // ids. Widget sessions key off slugs only.
     tenant: {
-        id: string;
         name: string;
         slug: string;
     };
 
     location: {
-        id: string;
         name: string;
         slug: string;
     };

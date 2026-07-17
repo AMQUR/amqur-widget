@@ -61,7 +61,7 @@ function isRecord(v: unknown): v is Record<string, unknown> {
     return v != null && typeof v === "object";
 }
 
-function validateBootstrapPayload(raw: unknown): WidgetBootstrapResult {
+export function validateBootstrapPayload(raw: unknown): WidgetBootstrapResult {
     if (!isRecord(raw)) {
         throw new Error("Invalid widget-config: expected an object");
     }
@@ -69,10 +69,10 @@ function validateBootstrapPayload(raw: unknown): WidgetBootstrapResult {
     const location = raw.location;
     const branding = raw.branding;
     const features = raw.features;
-    if (!isRecord(tenant) || typeof tenant.id !== "string") {
+    if (!isRecord(tenant) || typeof tenant.slug !== "string") {
         throw new Error("Invalid widget-config: missing tenant");
     }
-    if (!isRecord(location) || typeof location.id !== "string") {
+    if (!isRecord(location) || typeof location.slug !== "string") {
         throw new Error("Invalid widget-config: missing location");
     }
     if (!isRecord(branding) || !isRecord(features)) {
