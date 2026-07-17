@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeApiBaseUrl, unwrapApiData } from '../connect';
+import {
+  normalizeApiBaseUrl,
+  unwrapApiData,
+  validateBootstrapPayload,
+} from '../connect';
 
 /** Representative Nest envelopes matching backend ResponseInterceptor + chat orchestrator. */
 
@@ -17,8 +21,9 @@ describe('API contract fixtures', () => {
     const envelope = {
       success: true,
       data: {
-        tenant: { id: 't1', slug: 'demo', name: 'Demo Motors' },
-        location: { id: 'l1', slug: 'main', name: 'Main' },
+        // Public contract: no internal database ids — slugs and names only.
+        tenant: { slug: 'demo', name: 'Demo Motors' },
+        location: { slug: 'main', name: 'Main', timezone: 'America/Chicago' },
         branding: { primaryColor: '#111', accentColor: '#fff', logoUrl: null },
         features: {
           chat: true,
@@ -37,6 +42,40 @@ describe('API contract fixtures', () => {
     expect(data.tenant.slug).toBe('demo');
     expect(data.features.inventory).toBe(true);
     expect(data.features.vehicleCompare).toBe(true);
+  });
+
+  it('accepts an id-free bootstrap payload (new public contract)', () => {
+    const payload = validateBootstrapPayload({
+      tenant: { slug: 'demo', name: 'Demo Motors' },
+      location: { slug: 'main', name: 'Main', timezone: 'America/Chicago' },
+      branding: { primaryColor: '#111', accentColor: '#fff', logoUrl: null },
+      features: { chat: true },
+      consentText: 'Internal staging environment for authorized testing only.',
+      configVersion: 2,
+    });
+    expect(payload.tenant.slug).toBe('demo');
+    expect(payload.location.slug).toBe('main');
+    expect(payload.tenant).not.toHaveProperty('id');
+    expect(payload.location).not.toHaveProperty('id');
+  });
+
+  it('rejects bootstrap payloads missing tenant or location slug', () => {
+    expect(() =>
+      validateBootstrapPayload({
+        tenant: { name: 'No Slug Motors' },
+        location: { slug: 'main', name: 'Main' },
+        branding: {},
+        features: {},
+      }),
+    ).toThrow(/missing tenant/);
+    expect(() =>
+      validateBootstrapPayload({
+        tenant: { slug: 'demo', name: 'Demo' },
+        location: { name: 'Main' },
+        branding: {},
+        features: {},
+      }),
+    ).toThrow(/missing location/);
   });
 
   it('unwraps widget-token payload', () => {

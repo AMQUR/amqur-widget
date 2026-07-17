@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>AMQUR vendor restrictive host test</title>
+    <!-- Intentionally strict CSP for third-party embed validation -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' http://localhost:5173 http://127.0.0.1:5173; connect-src 'self' http://localhost:3000 http://127.0.0.1:3000; img-src 'self' data: https:; style-src 'self' 'unsafe-inline';"
+    />
+    <style>
+      body { font-family: Georgia, serif; margin: 0; background: #e8e4dc; color: #222; }
+      header { padding: 2rem; border-bottom: 1px solid #bbb; }
+      main { padding: 2rem; max-width: 40rem; }
+      #host-shadow { margin-top: 2rem; padding: 1rem; background: #fff; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Restrictive dealer host (test)</h1>
+      <p>Simulates delayed script load + host Shadow DOM + CSP.</p>
+    </header>
+    <main>
+      <p>Widget should mount in open Shadow DOM without leaking host CSS into chat chrome incorrectly.</p>
+      <div id="host-shadow"></div>
+    </main>
+    <script>
+      // Delayed load to mimic tag managers
+      setTimeout(function () {
+        var s = document.createElement('script');
+        s.src = '/src/embed.tsx';
+        s.type = 'module';
+        document.body.appendChild(s);
+      }, 1200);
+      // Host page also uses Shadow DOM (common CMS pattern)
+      var host = document.getElementById('host-shadow');
+      var root = host.attachShadow({ mode: 'open' });
+      root.innerHTML = '<p style="color:crimson">Host shadow content (unrelated)</p>';
+    </script>
+  </body>
+</html>

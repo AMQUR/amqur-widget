@@ -1,6 +1,12 @@
 import { test, expect } from '@playwright/test';
 
-const hasStaging = Boolean(process.env.STAGING_WIDGET_URL && process.env.STAGING_API_URL);
+// Legacy Dial Auto Group staging pilot — keep for historical env only.
+// Dial Us Now canary uses e2e/staging/dial-us-now-canary.spec.ts.
+const hasStaging = Boolean(
+  process.env.STAGING_WIDGET_URL &&
+    process.env.STAGING_API_URL &&
+    process.env.STAGING_LEGACY_PILOT === '1',
+);
 const api = (process.env.STAGING_API_URL || '').replace(/\/$/, '');
 const widgetOrigin = (process.env.STAGING_WIDGET_URL || '').replace(/\/$/, '');
 

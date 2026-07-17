@@ -1,0 +1,91 @@
+name: Deploy
+
+# Merge to main → automatic staging deploy → smoke (version.json + loader
+# bytes) → manual production approval (GitHub environment "production").
+#
+# OWNER SETUP REQUIRED (workflow is inert until then):
+#   - repo secret RAILWAY_TOKEN
+#   - GitHub environment "production" with required reviewers
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Guard — token present
+        run: |
+          if [ -z "${{ secrets.RAILWAY_TOKEN }}" ]; then
+            echo "RAILWAY_TOKEN secret not configured — owner setup required" >&2
+            exit 1
+          fi
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+      - name: Publish provenance variables + deploy widget
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          set -euo pipefail
+          railway variables --service widget --environment staging \
+            --set "APP_COMMIT_SHA=${{ github.sha }}" \
+            --set "APP_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --set "APP_RELEASE_ID=${{ github.run_id }}-${{ github.run_attempt }}" \
+            --set "APP_RELEASE_VERSION=$(node -e 'console.log(require("./package.json").version)')" \
+            --skip-deploys
+          railway up --service widget --environment staging --ci
+      - name: Staging smoke — release identity + loader served
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 30); do
+            deployed=$(curl -sf https://staging-widget.dialusnow.com/version.json | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{try{console.log(JSON.parse(d).commitSha)}catch{console.log("unparseable")}})' || echo unreachable)
+            [ "$deployed" = "${{ github.sha }}" ] && break
+            sleep 10
+          done
+          [ "$deployed" = "${{ github.sha }}" ] || { echo "widget never reported ${{ github.sha }}" >&2; exit 1; }
+          curl -sf https://staging-widget.dialusnow.com/assistant-widget.iife.js | head -c 40 | grep -q AmqurWidgetBundle
+          echo "staging smoke passed"
+
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Manual gate
+        run: echo "approved by required reviewer"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+      - name: Deploy widget to production
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          set -euo pipefail
+          railway variables --service widget --environment production \
+            --set "APP_COMMIT_SHA=${{ github.sha }}" \
+            --set "APP_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --set "APP_RELEASE_ID=${{ github.run_id }}-${{ github.run_attempt }}" \
+            --set "APP_RELEASE_VERSION=$(node -e 'console.log(require("./package.json").version)')" \
+            --skip-deploys
+          railway up --service widget --environment production --ci
+      - name: Rollback hint on failure
+        if: failure()
+        run: |
+          echo "::error::Production deploy/smoke failed — roll back via Railway: redeploy the previous widget deployment"

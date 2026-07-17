@@ -11,13 +11,13 @@
     <p>Serve the local build (<code>npm run build</code>) or point <code>src</code> at your hosted IIFE.</p>
 
     <!-- Prefer local dist during development -->
-    <script src="./dist/amqur-widget.iife.js"></script>
+    <script src="./dist/assistant-widget.iife.js"></script>
     <script>
-        // Replace placeholders before use — do not commit real production credentials or tenant slugs.
+        // Local fixture tenant created by backend scripts/setup-local-dev.sh — safe for development only.
         window.AMQUR.init({
             apiBaseUrl: "http://localhost:3000/api",
-            tenantSlug: "YOUR_TENANT_SLUG",
-            locationSlug: "YOUR_LOCATION_SLUG"
+            tenantSlug: "local-dev-motors",
+            locationSlug: "main"
         });
     </script>
 

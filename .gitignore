@@ -32,3 +32,9 @@ staging/public
 # Keep staging static publish tree uploadable to Railway
 !staging/public/
 !staging/public/**
+
+.playwright-cli/
+playwright-report/
+test-results/
+
+version.json

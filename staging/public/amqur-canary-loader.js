@@ -79,7 +79,12 @@
         return res.json();
       })
       .then(function (body) {
-        return !!(body && body.eligible === true);
+        // Nest ResponseInterceptor wraps as { success, data }; tolerate raw bodies.
+        var payload =
+          body && typeof body === 'object' && body.data !== undefined
+            ? body.data
+            : body;
+        return !!(payload && payload.eligible === true);
       })
       .catch(function () {
         return false;

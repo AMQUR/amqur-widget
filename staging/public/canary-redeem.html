@@ -94,11 +94,15 @@
             headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
             body: JSON.stringify({ inviteToken: inviteToken }),
           });
-          var body = await res.json().catch(function () {
+          var raw = await res.json().catch(function () {
             return {};
           });
+          var body =
+            raw && typeof raw === 'object' && raw.data !== undefined
+              ? raw.data
+              : raw;
           if (!res.ok) {
-            out.textContent = 'Failed ' + res.status + ': ' + JSON.stringify(body);
+            out.textContent = 'Failed ' + res.status + ': ' + JSON.stringify(raw);
             return;
           }
           out.textContent =
