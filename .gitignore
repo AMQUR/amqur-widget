@@ -37,3 +37,4 @@ staging/public
 playwright-report/
 test-results/
 
+version.json

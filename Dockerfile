@@ -11,7 +11,8 @@ RUN npm run build \
   && cp dist/assistant-widget.iife.js /out/assistant-widget.iife.js \
   && cp staging/public/amqur-canary-loader.js /out/amqur-canary-loader.js 2>/dev/null || true \
   && cp staging/public/canary-redeem.html /out/canary-redeem.html 2>/dev/null || true \
-  && cp staging/public/index.html /out/index.html 2>/dev/null || true
+  && cp staging/public/index.html /out/index.html 2>/dev/null || true \
+  && cp version.json /out/version.json 2>/dev/null || true
 
 FROM nginx:alpine
 COPY staging/nginx.conf.template /etc/nginx/templates/default.conf.template
