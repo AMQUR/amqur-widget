@@ -41,15 +41,16 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           set -euo pipefail
+          VERSION=$(node -p 'require("./package.json").version')
           railway variables --service widget --environment staging \
             --set "APP_COMMIT_SHA=${{ github.sha }}" \
             --set "APP_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             --set "APP_RELEASE_ID=${{ github.run_id }}-${{ github.run_attempt }}" \
-            --set "APP_RELEASE_VERSION=$(node -e 'console.log(require("./package.json").version)')" \
+            --set "APP_RELEASE_VERSION=${VERSION}" \
             --skip-deploys
-          # Staging uses the labeled employee canary host (Dockerfile.staging).
-          railway up --service widget --environment staging --ci \
-            --dockerfile Dockerfile.staging
+          # Staging uses the labeled employee canary host.
+          sed -i 's|dockerfilePath = "Dockerfile"|dockerfilePath = "Dockerfile.staging"|' railway.toml
+          railway up --service widget --environment staging --ci
       - name: Staging smoke — release identity + loader served
         run: |
           set -euo pipefail
@@ -80,15 +81,15 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           set -euo pipefail
+          VERSION=$(node -p 'require("./package.json").version')
           # Production service name in dial-us-now-platform is prod-widget.
           railway variables --service prod-widget --environment production \
             --set "APP_COMMIT_SHA=${{ github.sha }}" \
             --set "APP_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             --set "APP_RELEASE_ID=${{ github.run_id }}-${{ github.run_attempt }}" \
-            --set "APP_RELEASE_VERSION=$(node -e 'console.log(require("./package.json").version)')" \
+            --set "APP_RELEASE_VERSION=${VERSION}" \
             --skip-deploys
-          railway up --service prod-widget --environment production --ci \
-            --dockerfile Dockerfile
+          railway up --service prod-widget --environment production --ci
       - name: Rollback hint on failure
         if: failure()
         run: |
