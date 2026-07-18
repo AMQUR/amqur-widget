@@ -10,29 +10,58 @@
     .banner { background: #b45309; color: #fff; padding: 12px 16px; font-weight: 700; letter-spacing: 0.02em; }
     .wrap { max-width: 720px; margin: 40px auto; padding: 0 16px; }
     code { background: #1e293b; padding: 2px 6px; border-radius: 4px; }
+    label { display: block; margin: 16px 0 6px; font-weight: 600; }
+    select, button { font: inherit; padding: 8px 12px; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: #e2e8f0; }
+    button { cursor: pointer; background: #b45309; border-color: #b45309; font-weight: 700; margin-top: 16px; }
+    .hint { color: #94a3b8; font-size: 0.95rem; }
   </style>
 </head>
 <body>
   <div class="banner">STAGING — NOT FOR CUSTOMERS</div>
   <div class="wrap">
-    <h1>AMQUR Staging Pilot Host</h1>
-    <p>Tenant: <code>dial-auto-group-staging</code> · Rooftop: <code>pilot-rooftop</code></p>
-    <p>Fixture inventory only. Tekion, live vAuto, automated follow-up, and voice remain disabled.</p>
+    <h1>Dial Us Now — Internal Employee Canary Host</h1>
+    <p class="hint">Authorized employees only. Do not enter real customer information. Inventory, prices, rebates, and hours remain disabled unless verified.</p>
+    <p>API: <code>https://staging-api.dialusnow.com/api</code> · Widget: <code>assistant-widget.iife.js</code></p>
+
+    <label for="tenant">Rooftop tenant</label>
+    <select id="tenant">
+      <option value="jeep-of-chicago">Jeep of Chicago</option>
+      <option value="dial-nissan-of-chicago">Dial Nissan of Chicago</option>
+      <option value="dial-chevy-of-chicago">Dial Chevy of Chicago</option>
+      <option value="infiniti-of-chicago">INFINITI of Chicago</option>
+      <option value="dial-cdjr-of-chicago">Dial CDJR of Chicago</option>
+    </select>
+
+    <div>
+      <button id="boot" type="button">Load assistant</button>
+    </div>
   </div>
-  <script src="./amqur-widget.iife.js"></script>
+
+  <script src="./assistant-widget.iife.js"></script>
   <script>
     (function () {
-      var api = window.AMQUR;
-      if (!api || typeof api.init !== "function") {
-        console.error("[AMQUR staging] widget API missing after IIFE load", api);
-        return;
+      var API_BASE = "https://staging-api.dialusnow.com/api";
+      var bootBtn = document.getElementById("boot");
+      var tenantSelect = document.getElementById("tenant");
+
+      function boot() {
+        var api = window.AMQUR;
+        if (!api || typeof api.init !== "function") {
+          console.error("[AMQUR staging] widget API missing after IIFE load", api);
+          return;
+        }
+        if (typeof api.destroy === "function") {
+          try { api.destroy(); } catch (e) { /* ignore */ }
+        }
+        api.init({
+          apiBaseUrl: API_BASE,
+          tenantSlug: tenantSelect.value,
+          locationSlug: "main",
+          locale: "en",
+        });
       }
-      api.init({
-        apiBaseUrl: "https://backend-staging-staging-b699.up.railway.app/api",
-        tenantSlug: "dial-auto-group-staging",
-        locationSlug: "pilot-rooftop",
-        locale: "en",
-      });
+
+      bootBtn.addEventListener("click", boot);
     })();
   </script>
 </body>
