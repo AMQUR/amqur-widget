@@ -27,7 +27,7 @@ RUN npm run build \
     '}' > /out/version.json \
   && grep -q 'STAGING — NOT FOR CUSTOMERS' /out/index.html \
   && grep -q 'staging-api.dialusnow.com' /out/index.html \
-  && ! grep -q 'api.dialusnow.com' /out/index.html \
+  && ! grep -q 'https://api.dialusnow.com' /out/index.html \
   && ! grep -q 'backend-staging-staging-b699' /out/index.html
 
 FROM nginx:alpine
