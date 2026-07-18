@@ -1,0 +1,49 @@
+server {
+    listen LISTEN_PORT;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+    add_header X-Robots-Tag "noindex, nofollow" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
+    location = /assistant-widget.iife.js {
+        default_type application/javascript;
+        add_header Cache-Control "public, max-age=300" always;
+        add_header Access-Control-Allow-Origin "*" always;
+        try_files $uri =404;
+    }
+
+    # Legacy alias kept during migration windows (same bytes as assistant-widget).
+    location = /amqur-widget.iife.js {
+        default_type application/javascript;
+        add_header Cache-Control "public, max-age=300" always;
+        add_header Access-Control-Allow-Origin "*" always;
+        try_files /assistant-widget.iife.js =404;
+    }
+
+    location = /version.json {
+        default_type application/json;
+        add_header Cache-Control "no-store" always;
+        add_header Access-Control-Allow-Origin "*" always;
+        try_files $uri =404;
+    }
+
+    location ~ ^/assistant-widget\.[a-f0-9]+\.iife\.js$ {
+        default_type application/javascript;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        add_header Access-Control-Allow-Origin "*" always;
+        try_files /assistant-widget.iife.js =404;
+    }
+
+    location ~ ^/amqur-widget\.[a-f0-9]+\.iife\.js$ {
+        default_type application/javascript;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        add_header Access-Control-Allow-Origin "*" always;
+        try_files /assistant-widget.iife.js =404;
+    }
+
+    location / {
+        add_header Cache-Control "no-store" always;
+        try_files $uri $uri/ /index.html;
+    }
+}
