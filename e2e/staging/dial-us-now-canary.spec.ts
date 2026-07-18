@@ -69,7 +69,7 @@ test.describe('Dial Us Now staging canary', () => {
     });
   }
 
-  test('cross-tenant widget-token denied without origins', async ({
+  test('allowlisted staging-widget origin can mint tokens', async ({
     request,
   }) => {
     for (const slug of TENANTS) {
@@ -78,6 +78,21 @@ test.describe('Dial Us Now staging canary', () => {
           request.post(`${api}/public/widget-token`, {
             data: { tenantSlug: slug, locationSlug: 'main' },
             headers: { Origin: widgetOrigin },
+          }),
+        (r) => r.status() === 201,
+      );
+      expect(res.status()).toBe(201);
+      const body = await res.json();
+      expect(body?.data?.token || body?.token).toBeTruthy();
+    }
+  });
+
+  test('missing origin fails closed for all rooftops', async ({ request }) => {
+    for (const slug of TENANTS) {
+      const res = await withThrottleRetry(
+        () =>
+          request.post(`${api}/public/widget-token`, {
+            data: { tenantSlug: slug, locationSlug: 'main' },
           }),
         (r) => r.status() === 403,
       );
