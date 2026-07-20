@@ -21,9 +21,65 @@ server {
         try_files /assistant-widget.iife.js =404;
     }
 
+    location = /embed.js {
+        default_type application/javascript;
+        add_header Cache-Control "public, max-age=300" always;
+        add_header Access-Control-Allow-Origin "*" always;
+        try_files $uri =404;
+    }
+
+    location = /embed-manifest.json {
+        default_type application/json;
+        add_header Cache-Control "no-store" always;
+        add_header Access-Control-Allow-Origin "*" always;
+        try_files $uri =404;
+    }
+
     location = /version.json {
         default_type application/json;
         add_header Cache-Control "no-store" always;
+        add_header Access-Control-Allow-Origin "*" always;
+        try_files $uri =404;
+    }
+
+    # Tenant logos / manifests under /assets/tenants/
+    location ^~ /assets/tenants/ {
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Allow-Methods "GET, HEAD, OPTIONS" always;
+
+        # Immutable hashed assets: logo.<hash>.svg|png
+        location ~* ^/assets/tenants/.+\.[a-f0-9]{8,}\.(svg|png|webp|jpg|jpeg)$ {
+            types {
+                image/svg+xml svg;
+                image/png png;
+                image/webp webp;
+                image/jpeg jpg jpeg;
+            }
+            add_header Cache-Control "public, max-age=31536000, immutable" always;
+            add_header Access-Control-Allow-Origin "*" always;
+            try_files $uri =404;
+        }
+
+        location ~* \.(svg|png|webp|jpg|jpeg)$ {
+            types {
+                image/svg+xml svg;
+                image/png png;
+                image/webp webp;
+                image/jpeg jpg jpeg;
+            }
+            add_header Cache-Control "public, max-age=3600" always;
+            add_header Access-Control-Allow-Origin "*" always;
+            try_files $uri =404;
+        }
+
+        location ~* \.json$ {
+            default_type application/json;
+            add_header Cache-Control "public, max-age=300" always;
+            add_header Access-Control-Allow-Origin "*" always;
+            try_files $uri =404;
+        }
+
+        add_header Cache-Control "public, max-age=300" always;
         add_header Access-Control-Allow-Origin "*" always;
         try_files $uri =404;
     }

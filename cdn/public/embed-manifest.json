@@ -1,0 +1,14 @@
+{
+  "name": "amqur-embed",
+  "version": "0.2.0",
+  "commitSha": "0221ff5d7d1087598b91e4d2b9facf478c425a9b",
+  "buildTime": "2026-07-20T03:17:29.711Z",
+  "embedJs": "/embed.js",
+  "widgetBundle": "/assistant-widget.iife.js",
+  "integrity": {
+    "embed.js": "sha384-y08M1Um8lvY+AnE0Eo+NhnZTLlO/Q4Uf6wBpNPpIIFDFeYbvLvnkavNAq2MBR4Rb",
+    "assistant-widget.iife.js": null
+  },
+  "apiHost": "https://api.dialusnow.com",
+  "widgetHost": "https://widget.dialusnow.com"
+}

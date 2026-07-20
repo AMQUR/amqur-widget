@@ -1,0 +1,426 @@
+{
+  "version": 1,
+  "generatedAt": "2026-07-20T02:53:21.916Z",
+  "publicBaseUrl": "https://widget.dialusnow.com/assets/tenants",
+  "tenants": [
+    {
+      "tenantSlug": "dial-auto-group",
+      "displayName": "Dial Auto Group",
+      "altText": "Dial Auto Group logo",
+      "sourcePath": "/Users/saad/Downloads/FINAL LOGOS WITH NEW DESIGN/Dial Auto New/Logo",
+      "sourceFiles": [
+        "Dial Auto Group-01.jpg",
+        "Dial Auto Group-01.png",
+        "Dial Auto Group-01.svg",
+        "Dial Auto Group.pdf"
+      ],
+      "sourceAltFiles": [],
+      "favicons": [
+        "Favicon_16 x 16.png",
+        "Favicon_32 x 32 .png",
+        "Favicon_48 x 48 .png",
+        "Favicon_96 x 96 .png"
+      ],
+      "faviconRuntime": [
+        {
+          "size": "16x16",
+          "filename": "favicon.16x16.8a4ba3485204.png",
+          "sha256": "8a4ba3485204fa8f8cd4c6f76b3300773109555ef47bec41a6a48c501a2f1c1f",
+          "publicUrl": "https://widget.dialusnow.com/assets/tenants/dial-auto-group/favicons/favicon.16x16.8a4ba3485204.png"
+        },
+        {
+          "size": "32x32",
+          "filename": "favicon.32x32.d764915902ae.png",
+          "sha256": "d764915902ae55b377a32b936f3f44cf7b9755e537ad277064cd89a3f4878660",
+          "publicUrl": "https://widget.dialusnow.com/assets/tenants/dial-auto-group/favicons/favicon.32x32.d764915902ae.png"
+        },
+        {
+          "size": "48x48",
+          "filename": "favicon.48x48.a00bfd14dced.png",
+          "sha256": "a00bfd14dcedcb61790c18f96e4f0637d6c98ee2741a61dcbab071c2c1b0f58f",
+          "publicUrl": "https://widget.dialusnow.com/assets/tenants/dial-auto-group/favicons/favicon.48x48.a00bfd14dced.png"
+        },
+        {
+          "size": "96x96",
+          "filename": "favicon.96x96.5bcbe093ccc8.png",
+          "sha256": "5bcbe093ccc860617ba443797f8a0b67645cbf66e16fb859151b3a56715b4d3d",
+          "publicUrl": "https://widget.dialusnow.com/assets/tenants/dial-auto-group/favicons/favicon.96x96.5bcbe093ccc8.png"
+        }
+      ],
+      "svg": {
+        "originalFilename": "Dial Auto Group-01.svg",
+        "runtimeFilename": "logo.14cd52b7b4aa.svg",
+        "sha256": "14cd52b7b4aaca5d2288db944bb5fce8fd68f51a3769eb6a411f9babf5623044",
+        "hash12": "14cd52b7b4aa",
+        "publicUrl": "https://widget.dialusnow.com/assets/tenants/dial-auto-group/logo.14cd52b7b4aa.svg",
+        "viewBox": {
+          "raw": "0 0 1000 708.92",
+          "x": 0,
+          "y": 0,
+          "width": 1000,
+          "height": 708.92
+        },
+        "candidateColors": [
+          "#91002a",
+          "#ce0031",
+          "#e5042f",
+          "#e50430",
+          "#e50833",
+          "#e7143d",
+          "#e9294e",
+          "#eb1d20",
+          "#ec4566",
+          "#f06a84",
+          "#030303",
+          "#040302",
+          "#080808",
+          "#262626",
+          "#595959",
+          "#6f6d70",
+          "#afafaf",
+          "#f16467",
+          "#f497a9",
+          "#f7a6a7",
+          "#facbd4",
+          "#fae9e5",
+          "#fbd6d7",
+          "#fdfdfd",
+          "#fef4f4",
+          "#fff"
+        ]
+      },
+      "png": {
+        "originalFilename": "Dial Auto Group-01.png",
+        "runtimeFilename": "logo.403201ca667b.png",
+        "sha256": "403201ca667b0832d661250348a7e722f18d6f951e4cc044917334b5ee048c74",
+        "hash12": "403201ca667b",
+        "publicUrl": "https://widget.dialusnow.com/assets/tenants/dial-auto-group/logo.403201ca667b.png"
+      }
+    },
+    {
+      "tenantSlug": "dial-chevy-of-chicago",
+      "displayName": "Dial Chevy of Chicago",
+      "altText": "Dial Chevy of Chicago logo",
+      "sourcePath": "/Users/saad/Downloads/FINAL LOGOS WITH NEW DESIGN/CHEVY",
+      "sourceFiles": [
+        "Dial Auto Group.pdf",
+        "Dial Auto Group_01.jpg",
+        "Dial Auto Group_01.png",
+        "Dial Auto Group_01.svg"
+      ],
+      "sourceAltFiles": [],
+      "favicons": [],
+      "faviconRuntime": [],
+      "svg": {
+        "originalFilename": "Dial Auto Group_01.svg",
+        "runtimeFilename": "logo.f01bc53bc899.svg",
+        "sha256": "f01bc53bc89964ddcaa8ce15d365c5dada04201990cf8d73ae9967a1753e3f04",
+        "hash12": "f01bc53bc899",
+        "publicUrl": "https://widget.dialusnow.com/assets/tenants/dial-chevy-of-chicago/logo.f01bc53bc899.svg",
+        "viewBox": {
+          "raw": "0 0 1000 522.93",
+          "x": 0,
+          "y": 0,
+          "width": 1000,
+          "height": 522.93
+        },
+        "candidateColors": [
+          "#91002a",
+          "#ce0031",
+          "#e5042f",
+          "#e50430",
+          "#e50833",
+          "#e7143d",
+          "#e9294e",
+          "#eb1d20",
+          "#ec4566",
+          "#f06a84",
+          "#030303",
+          "#040302",
+          "#080808",
+          "#262626",
+          "#595959",
+          "#6f6d70",
+          "#afafaf",
+          "#f16467",
+          "#f497a9",
+          "#f7a6a7",
+          "#facbd4",
+          "#fae9e5",
+          "#fbd6d7",
+          "#fdfdfd",
+          "#fef4f4",
+          "#fff"
+        ]
+      },
+      "png": {
+        "originalFilename": "Dial Auto Group_01.png",
+        "runtimeFilename": "logo.0645b2b8223c.png",
+        "sha256": "0645b2b8223c42b660ccd399ecccc827b28b9bc8f2a97511847172ee58a2c072",
+        "hash12": "0645b2b8223c",
+        "publicUrl": "https://widget.dialusnow.com/assets/tenants/dial-chevy-of-chicago/logo.0645b2b8223c.png"
+      }
+    },
+    {
+      "tenantSlug": "dial-cdjr-of-chicago",
+      "displayName": "Dial CDJR of Chicago",
+      "altText": "Dial CDJR of Chicago logo",
+      "sourcePath": "/Users/saad/Downloads/FINAL LOGOS WITH NEW DESIGN/Dial CDJR",
+      "sourceFiles": [
+        "Dial Auto Group.pdf",
+        "Dial Auto Group_01.jpg",
+        "Dial Auto Group_01.png",
+        "Dial Auto Group_01.svg"
+      ],
+      "sourceAltFiles": [],
+      "favicons": [],
+      "faviconRuntime": [],
+      "svg": {
+        "originalFilename": "Dial Auto Group_01.svg",
+        "runtimeFilename": "logo.7120c2356ee4.svg",
+        "sha256": "7120c2356ee4fe8774227942913659b9a249177897a8fa6fa893d14c67aceaf7",
+        "hash12": "7120c2356ee4",
+        "publicUrl": "https://widget.dialusnow.com/assets/tenants/dial-cdjr-of-chicago/logo.7120c2356ee4.svg",
+        "viewBox": {
+          "raw": "0 0 1000 522.93",
+          "x": 0,
+          "y": 0,
+          "width": 1000,
+          "height": 522.93
+        },
+        "candidateColors": [
+          "#91002a",
+          "#ce0031",
+          "#e5042f",
+          "#e50430",
+          "#e50833",
+          "#e7143d",
+          "#e9294e",
+          "#eb1d20",
+          "#ec4566",
+          "#f06a84",
+          "#030303",
+          "#040302",
+          "#080808",
+          "#262626",
+          "#595959",
+          "#6f6d70",
+          "#afafaf",
+          "#f16467",
+          "#f497a9",
+          "#f7a6a7",
+          "#facbd4",
+          "#fae9e5",
+          "#fbd6d7",
+          "#fdfdfd",
+          "#fef4f4",
+          "#fff"
+        ]
+      },
+      "png": {
+        "originalFilename": "Dial Auto Group_01.png",
+        "runtimeFilename": "logo.3121995864de.png",
+        "sha256": "3121995864de09c9e98f168980a4145b7da80aa38e63386fd4630309ca36b84b",
+        "hash12": "3121995864de",
+        "publicUrl": "https://widget.dialusnow.com/assets/tenants/dial-cdjr-of-chicago/logo.3121995864de.png"
+      }
+    },
+    {
+      "tenantSlug": "infiniti-of-chicago",
+      "displayName": "Infiniti of Chicago",
+      "altText": "Infiniti of Chicago logo",
+      "sourcePath": "/Users/saad/Downloads/FINAL LOGOS WITH NEW DESIGN/INFINITI OF CHICAGO",
+      "sourceFiles": [
+        "Dial Auto Group.pdf",
+        "Dial Auto Group_01.jpg",
+        "Dial Auto Group_01.png",
+        "Dial Auto Group_01.svg"
+      ],
+      "sourceAltFiles": [
+        "Dial Auto Group.pdf",
+        "Dial Auto Group_01.jpg",
+        "Dial Auto Group_01.png",
+        "Dial Auto Group_01.svg"
+      ],
+      "favicons": [],
+      "faviconRuntime": [],
+      "svg": {
+        "originalFilename": "Dial Auto Group_01.svg",
+        "runtimeFilename": "logo.3e97eead086a.svg",
+        "sha256": "3e97eead086a3071f1f7c4f56a4c19e67e262589652a98d2887a427101a6f09e",
+        "hash12": "3e97eead086a",
+        "publicUrl": "https://widget.dialusnow.com/assets/tenants/infiniti-of-chicago/logo.3e97eead086a.svg",
+        "viewBox": {
+          "raw": "0 0 1000 437.13",
+          "x": 0,
+          "y": 0,
+          "width": 1000,
+          "height": 437.13
+        },
+        "candidateColors": [
+          "#91002a",
+          "#ce0031",
+          "#e5042f",
+          "#e50430",
+          "#e50833",
+          "#e7143d",
+          "#e9294e",
+          "#eb1d20",
+          "#ec4566",
+          "#f06a84",
+          "#030303",
+          "#040302",
+          "#080808",
+          "#262626",
+          "#595959",
+          "#6f6d70",
+          "#afafaf",
+          "#f16467",
+          "#f497a9",
+          "#f7a6a7",
+          "#facbd4",
+          "#fae9e5",
+          "#fbd6d7",
+          "#fdfdfd",
+          "#fef4f4",
+          "#fff"
+        ]
+      },
+      "png": {
+        "originalFilename": "Dial Auto Group_01.png",
+        "runtimeFilename": "logo.d64c19d010c0.png",
+        "sha256": "d64c19d010c0f5e1e62a02dbe432b8cd98aee0eef3e44471c76a86bd3a981f60",
+        "hash12": "d64c19d010c0",
+        "publicUrl": "https://widget.dialusnow.com/assets/tenants/infiniti-of-chicago/logo.d64c19d010c0.png"
+      }
+    },
+    {
+      "tenantSlug": "jeep-of-chicago",
+      "displayName": "Jeep of Chicago",
+      "altText": "Jeep of Chicago logo",
+      "sourcePath": "/Users/saad/Downloads/FINAL LOGOS WITH NEW DESIGN/JEEP OF CHICAGO",
+      "sourceFiles": [
+        "Dial Auto Group.pdf",
+        "Dial Auto Group_01.jpg",
+        "Dial Auto Group_01.png",
+        "Dial Auto Group_01.svg"
+      ],
+      "sourceAltFiles": [],
+      "favicons": [],
+      "faviconRuntime": [],
+      "svg": {
+        "originalFilename": "Dial Auto Group_01.svg",
+        "runtimeFilename": "logo.65f09faa2c92.svg",
+        "sha256": "65f09faa2c92f66df7956ef77b7e61cea1ea883a8d2bd8f06431685c6d419e4b",
+        "hash12": "65f09faa2c92",
+        "publicUrl": "https://widget.dialusnow.com/assets/tenants/jeep-of-chicago/logo.65f09faa2c92.svg",
+        "viewBox": {
+          "raw": "0 0 1000 507.53",
+          "x": 0,
+          "y": 0,
+          "width": 1000,
+          "height": 507.53
+        },
+        "candidateColors": [
+          "#91002a",
+          "#ce0031",
+          "#e5042f",
+          "#e50430",
+          "#e50833",
+          "#e7143d",
+          "#e9294e",
+          "#eb1d20",
+          "#ec4566",
+          "#f06a84",
+          "#030303",
+          "#040302",
+          "#080808",
+          "#262626",
+          "#595959",
+          "#6f6d70",
+          "#afafaf",
+          "#f16467",
+          "#f497a9",
+          "#f7a6a7",
+          "#facbd4",
+          "#fae9e5",
+          "#fbd6d7",
+          "#fdfdfd",
+          "#fef4f4",
+          "#fff"
+        ]
+      },
+      "png": {
+        "originalFilename": "Dial Auto Group_01.png",
+        "runtimeFilename": "logo.7740cb0f58fe.png",
+        "sha256": "7740cb0f58fecc10dedbd0e5ca91622ba64514b7c5cb77ddda77feb2ea0d897c",
+        "hash12": "7740cb0f58fe",
+        "publicUrl": "https://widget.dialusnow.com/assets/tenants/jeep-of-chicago/logo.7740cb0f58fe.png"
+      }
+    },
+    {
+      "tenantSlug": "dial-nissan-of-chicago",
+      "displayName": "Dial Nissan of Chicago",
+      "altText": "Dial Nissan of Chicago logo",
+      "sourcePath": "/Users/saad/Downloads/FINAL LOGOS WITH NEW DESIGN/NISSAN",
+      "sourceFiles": [
+        "Dial Auto Group.pdf",
+        "Dial Auto Group_01.jpg",
+        "Dial Auto Group_01.png",
+        "Dial Auto Group_01.svg"
+      ],
+      "sourceAltFiles": [],
+      "favicons": [],
+      "faviconRuntime": [],
+      "svg": {
+        "originalFilename": "Dial Auto Group_01.svg",
+        "runtimeFilename": "logo.fd272741fd3c.svg",
+        "sha256": "fd272741fd3cc856b62dff7a71db601e65c6e1b42494ce4d61f69f7d76dd41b9",
+        "hash12": "fd272741fd3c",
+        "publicUrl": "https://widget.dialusnow.com/assets/tenants/dial-nissan-of-chicago/logo.fd272741fd3c.svg",
+        "viewBox": {
+          "raw": "0 0 1000 522.93",
+          "x": 0,
+          "y": 0,
+          "width": 1000,
+          "height": 522.93
+        },
+        "candidateColors": [
+          "#91002a",
+          "#ce0031",
+          "#e5042f",
+          "#e50430",
+          "#e50833",
+          "#e7143d",
+          "#e9294e",
+          "#eb1d20",
+          "#ec4566",
+          "#f06a84",
+          "#030303",
+          "#040302",
+          "#080808",
+          "#262626",
+          "#595959",
+          "#6f6d70",
+          "#afafaf",
+          "#f16467",
+          "#f497a9",
+          "#f7a6a7",
+          "#facbd4",
+          "#fae9e5",
+          "#fbd6d7",
+          "#fdfdfd",
+          "#fef4f4",
+          "#fff"
+        ]
+      },
+      "png": {
+        "originalFilename": "Dial Auto Group_01.png",
+        "runtimeFilename": "logo.dd66797e9f14.png",
+        "sha256": "dd66797e9f14baccc9be3e4bed1d93abde427e81035906af39b98c9f5d263ece",
+        "hash12": "dd66797e9f14",
+        "publicUrl": "https://widget.dialusnow.com/assets/tenants/dial-nissan-of-chicago/logo.dd66797e9f14.png"
+      }
+    }
+  ]
+}
