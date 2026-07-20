@@ -1,7 +1,9 @@
 #!/bin/sh
 set -e
 PORT="${PORT:-80}"
-sed "s/LISTEN_PORT/${PORT}/g" /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf
+TEMPLATE="${NGINX_TEMPLATE_PATH:-/etc/nginx/amqur/default.conf.template}"
+sed "s/LISTEN_PORT/${PORT}/g" "$TEMPLATE" > /etc/nginx/conf.d/default.conf
+nginx -t
 
 # Release provenance: prefer APP_* variables set by the deploy pipeline;
 # keep any build-time stamped version.json as fallback.

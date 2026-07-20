@@ -26,11 +26,14 @@ RUN npm run build \
     '}' > /out/version.json
 
 FROM nginx:alpine
-COPY cdn/nginx.conf.template /etc/nginx/templates/default.conf.template
+# Keep template OUT of /etc/nginx/templates so the stock nginx entrypoint
+# does not envsubst $uri / regex anchors and corrupt the config.
+COPY cdn/nginx.conf.template /etc/nginx/amqur/default.conf.template
 COPY cdn/docker-entrypoint.sh /docker-entrypoint-amqur.sh
 COPY --from=build /out/ /usr/share/nginx/html/
 RUN chmod +x /docker-entrypoint-amqur.sh \
   && rm -f /etc/nginx/conf.d/default.conf \
+  && rm -rf /etc/nginx/templates \
   && test -f /usr/share/nginx/html/assistant-widget.iife.js \
   && test -f /usr/share/nginx/html/embed.js \
   && test -f /usr/share/nginx/html/embed-manifest.json \
@@ -40,4 +43,4 @@ RUN chmod +x /docker-entrypoint-amqur.sh \
   && ! grep -qi 'dial-auto-group-staging' /usr/share/nginx/html/index.html \
   && ! grep -qi 'staging-widget\|staging-api\|localhost' /usr/share/nginx/html/embed.js
 EXPOSE 80
-CMD ["/docker-entrypoint-amqur.sh"]
+ENTRYPOINT ["/docker-entrypoint-amqur.sh"]
