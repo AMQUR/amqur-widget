@@ -411,7 +411,8 @@ function processTenant(tenant) {
     tenantSlug: tenant.tenantSlug,
     displayName: tenant.displayName,
     altText: tenant.altText,
-    sourcePath: tenant.sourceDir,
+    // Never publish absolute local paths on the CDN-facing manifest.
+    sourceDirName: path.basename(tenant.sourceDir),
     sourceFiles: originalsCopied,
     sourceAltFiles: sourceAlt,
     favicons,
@@ -452,7 +453,7 @@ function writeMarkdown(manifest) {
   for (const t of manifest.tenants) {
     const colors = t.svg.candidateColors.join(', ');
     lines.push(
-      `| \`${t.tenantSlug}\` | \`${t.sourcePath}\` | \`${t.svg.runtimeFilename}\` | \`${t.svg.sha256}\` | ${colors} | ${t.svg.publicUrl} |`,
+      `| \`${t.tenantSlug}\` | \`${t.sourceDirName || t.sourcePath}\` | \`${t.svg.runtimeFilename}\` | \`${t.svg.sha256}\` | ${colors} | ${t.svg.publicUrl} |`,
     );
   }
   lines.push('');
@@ -462,7 +463,7 @@ function writeMarkdown(manifest) {
     lines.push(`### ${t.displayName} (\`${t.tenantSlug}\`)`);
     lines.push('');
     lines.push(`- **Alt text:** ${t.altText}`);
-    lines.push(`- **Source:** \`${t.sourcePath}\``);
+    lines.push(`- **Source:** \`${t.sourceDirName || t.sourcePath}\``);
     lines.push(
       `- **SVG:** \`${t.svg.runtimeFilename}\` (sha256 \`${t.svg.sha256}\`)`,
     );
@@ -528,7 +529,7 @@ function main() {
     console.log(
       [
         t.tenantSlug,
-        t.sourcePath,
+        t.sourceDirName || t.sourcePath,
         t.svg.runtimeFilename,
         t.svg.sha256,
         t.svg.candidateColors.join('|'),
