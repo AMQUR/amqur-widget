@@ -41,6 +41,7 @@ export type WidgetBootstrapResult = {
         primaryColor: string;
         accentColor: string;
         logoUrl: string | null;
+        logoAlt?: string | null;
         launcherIconUrl?: string | null;
         phone?: string | null;
         websiteUrl?: string | null;

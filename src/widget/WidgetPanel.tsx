@@ -35,6 +35,9 @@ export function WidgetPanel({
   const primaryColor = branding?.primaryColor || '#111111';
   const logoUrl = branding?.logoUrl;
   const locationName = location?.name || 'Dealership Assistant';
+  const logoAlt =
+    (typeof branding?.logoAlt === 'string' && branding.logoAlt.trim()) ||
+    `${locationName} logo`;
   const chatEnabled = features?.chat === true;
 
   useEffect(() => {
@@ -61,7 +64,7 @@ export function WidgetPanel({
           {logoUrl ? (
             <img
               src={logoUrl}
-              alt=""
+              alt={logoAlt}
               style={{ height: '24px', width: 'auto', borderRadius: '4px' }}
             />
           ) : (

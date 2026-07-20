@@ -21,10 +21,40 @@ server {
         try_files /assistant-widget.iife.js =404;
     }
 
+    location = /embed.js {
+        default_type application/javascript;
+        add_header Cache-Control "public, max-age=300" always;
+        add_header Access-Control-Allow-Origin "*" always;
+        try_files $uri =404;
+    }
+
+    location = /embed-manifest.json {
+        default_type application/json;
+        add_header Cache-Control "no-store" always;
+        add_header Access-Control-Allow-Origin "*" always;
+        try_files $uri =404;
+    }
+
     location = /version.json {
         default_type application/json;
         add_header Cache-Control "no-store" always;
         add_header Access-Control-Allow-Origin "*" always;
+        try_files $uri =404;
+    }
+
+    # Tenant logos / manifests — flat prefix (no nested regex; avoids envsubst breakage).
+    location ^~ /assets/tenants/ {
+        types {
+            image/svg+xml svg;
+            image/png png;
+            image/webp webp;
+            image/jpeg jpg jpeg;
+            application/json json;
+        }
+        default_type application/octet-stream;
+        add_header Cache-Control "public, max-age=3600" always;
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Allow-Methods "GET, HEAD, OPTIONS" always;
         try_files $uri =404;
     }
 
