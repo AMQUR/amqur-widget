@@ -20,6 +20,7 @@ export type WidgetFeatures = {
     voiceAi?: boolean;
     leadCapture?: boolean;
     handoff?: boolean;
+    appointments?: boolean;
 };
 
 export type WidgetBootstrapResult = {
