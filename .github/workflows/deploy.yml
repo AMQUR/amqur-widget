@@ -4,7 +4,9 @@ name: Deploy
 # bytes) → manual production approval (GitHub environment "production").
 #
 # OWNER SETUP REQUIRED (workflow is inert until then):
-#   - repo secret RAILWAY_TOKEN
+#   - repo secret RAILWAY_API_TOKEN (Railway account or workspace token;
+#     required because this workflow deploys both staging and production.
+#     Project tokens are single-environment and use RAILWAY_TOKEN instead.)
 #   - GitHub environment "production" with required reviewers
 
 on:
@@ -19,6 +21,10 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  # dial-us-now-platform (AMQUR) — required when using account/workspace tokens
+  RAILWAY_PROJECT_ID: 3bca40b6-01c6-4f02-9464-8682e6ffcb75
+
 jobs:
   deploy-staging:
     runs-on: ubuntu-latest
@@ -30,19 +36,19 @@ jobs:
           node-version: '22'
       - name: Guard — token present
         run: |
-          if [ -z "${{ secrets.RAILWAY_TOKEN }}" ]; then
-            echo "RAILWAY_TOKEN secret not configured — owner setup required" >&2
+          if [ -z "${{ secrets.RAILWAY_API_TOKEN }}" ]; then
+            echo "RAILWAY_API_TOKEN secret not configured — owner setup required" >&2
             exit 1
           fi
       - name: Install Railway CLI
         run: npm i -g @railway/cli
       - name: Publish provenance variables + deploy widget
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
         run: |
           set -euo pipefail
           VERSION=$(node -p 'require("./package.json").version')
-          railway variables --service widget --environment staging \
+          railway variables --project "$RAILWAY_PROJECT_ID" --service widget --environment staging \
             --set "APP_COMMIT_SHA=${{ github.sha }}" \
             --set "APP_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             --set "APP_RELEASE_ID=${{ github.run_id }}-${{ github.run_attempt }}" \
@@ -50,7 +56,7 @@ jobs:
             --skip-deploys
           # Staging uses the labeled employee canary host.
           sed -i 's|dockerfilePath = "Dockerfile"|dockerfilePath = "Dockerfile.staging"|' railway.toml
-          railway up --service widget --environment staging --ci
+          railway up --project "$RAILWAY_PROJECT_ID" --service widget --environment staging --ci
       - name: Staging smoke — release identity + loader served
         run: |
           set -euo pipefail
@@ -78,18 +84,18 @@ jobs:
         run: npm i -g @railway/cli
       - name: Deploy widget to production
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
         run: |
           set -euo pipefail
           VERSION=$(node -p 'require("./package.json").version')
           # Production service name in dial-us-now-platform is prod-widget.
-          railway variables --service prod-widget --environment production \
+          railway variables --project "$RAILWAY_PROJECT_ID" --service prod-widget --environment production \
             --set "APP_COMMIT_SHA=${{ github.sha }}" \
             --set "APP_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             --set "APP_RELEASE_ID=${{ github.run_id }}-${{ github.run_attempt }}" \
             --set "APP_RELEASE_VERSION=${VERSION}" \
             --skip-deploys
-          railway up --service prod-widget --environment production --ci
+          railway up --project "$RAILWAY_PROJECT_ID" --service prod-widget --environment production --ci
       - name: Rollback hint on failure
         if: failure()
         run: |
