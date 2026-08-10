@@ -1,9 +1,15 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, FormEvent } from 'react';
 import { sendChatMessage } from './api/chat.api';
 import { useWidget } from './WidgetContext';
 import { CompareTable } from './CompareTable';
 import { detectLocale, t, type Locale } from './i18n';
+import {
+    clearCompareVins,
+    loadCompareVins,
+    MAX_COMPARE_VEHICLES,
+    toggleCompareVin,
+} from './compareVehicles';
 import { loadSavedVins, toggleSavedVin } from './savedVehicles';
 import { ProactiveEngagement } from './ProactiveEngagement';
 
@@ -42,15 +48,32 @@ type Message = {
     isError?: boolean;
 };
 
+type SendOpts = {
+    action?: string;
+    vin?: string;
+    /** When set, show this i18n key as assistant reply instead of backend text. */
+    confirmationKey?: string;
+};
+
 function makeId(): string {
     return typeof crypto !== 'undefined' && crypto.randomUUID
         ? crypto.randomUUID()
         : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+function welcomeText(
+    locale: Locale,
+    locationName: string,
+    customWelcome?: string,
+): string {
+    if (typeof customWelcome === 'string' && customWelcome.trim()) {
+        return customWelcome.trim();
+    }
+    return t(locale, 'welcome', { location: locationName });
+}
+
 export function ChatView() {
     const { bootstrap, config, conversationId } = useWidget();
-    // Fail-closed: only show dealership-specific UI when explicitly enabled.
     const inventoryEnabled = bootstrap.features?.inventory === true;
     const paymentsEnabled = bootstrap.features?.payments === true;
     const compareEnabled = bootstrap.features?.vehicleCompare === true;
@@ -58,6 +81,16 @@ export function ChatView() {
     const serviceEnabled = bootstrap.features?.serviceAi === true;
     const partsEnabled = bootstrap.features?.partsAi === true;
     const multilingual = bootstrap.features?.multilingual === true;
+    const leadCaptureEnabled = bootstrap.features?.leadCapture === true;
+    const handoffEnabled = bootstrap.features?.handoff === true;
+    const appointmentsEnabled =
+        bootstrap.features?.appointments === true || serviceEnabled;
+
+    const consentLabel =
+        (typeof bootstrap.consentText === 'string' && bootstrap.consentText.trim()) ||
+        (typeof bootstrap.branding?.disclaimerText === 'string' &&
+            bootstrap.branding.disclaimerText.trim()) ||
+        '';
 
     const [locale, setLocale] = useState<Locale>(() =>
         detectLocale(config.locale ?? bootstrap.locales?.[0]),
@@ -65,12 +98,21 @@ export function ChatView() {
     const [savedVins, setSavedVins] = useState<string[]>(() =>
         loadSavedVins(config.tenantSlug, config.locationSlug),
     );
+    const [compareVins, setCompareVins] = useState<string[]>(() =>
+        loadCompareVins(config.tenantSlug, config.locationSlug),
+    );
+    const [savedDrawerOpen, setSavedDrawerOpen] = useState(false);
+    const [compareNotice, setCompareNotice] = useState<string | null>(null);
 
-    const [messages, setMessages] = useState<Message[]>([
+    const [messages, setMessages] = useState<Message[]>(() => [
         {
             id: 'welcome',
             role: 'assistant',
-            text: t(locale, 'welcome', { location: bootstrap.location.name }),
+            text: welcomeText(
+                detectLocale(config.locale ?? bootstrap.locales?.[0]),
+                bootstrap.location.name,
+                bootstrap.branding?.welcomeMessage,
+            ),
         },
     ]);
 
@@ -82,6 +124,14 @@ export function ChatView() {
     const [lastFailedUserText, setLastFailedUserText] = useState<string | null>(
         null,
     );
+
+    const [leadFirst, setLeadFirst] = useState('');
+    const [leadLast, setLeadLast] = useState('');
+    const [leadEmail, setLeadEmail] = useState('');
+    const [leadPhone, setLeadPhone] = useState('');
+    const [leadConsent, setLeadConsent] = useState(false);
+    const [leadError, setLeadError] = useState<string | null>(null);
+
     const bottomRef = useRef<HTMLDivElement | null>(null);
     const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -98,10 +148,10 @@ export function ChatView() {
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, sending]);
+    }, [messages, sending, savedDrawerOpen]);
 
     const sendMessage = useCallback(
-        async (text?: string, opts?: { action?: string; vin?: string }) => {
+        async (text?: string, opts?: SendOpts) => {
             const userText = (text ?? input).trim();
             if (!userText || sending) return;
             if (!isOnline) {
@@ -110,7 +160,7 @@ export function ChatView() {
                     {
                         id: makeId(),
                         role: 'assistant',
-                        text: 'You appear to be offline. Reconnect and try again.',
+                        text: t(locale, 'offline'),
                         isError: true,
                     },
                 ]);
@@ -149,6 +199,18 @@ export function ChatView() {
                     price?: number;
                     provenance?: { disclaimer?: string };
                 };
+
+                if (opts?.confirmationKey) {
+                    setMessages((prev) => [
+                        ...prev,
+                        {
+                            id: makeId(),
+                            role: 'assistant',
+                            text: t(locale, opts.confirmationKey!),
+                        },
+                    ]);
+                    return;
+                }
 
                 let assistantMsg: Message;
                 const provenanceDisclaimer =
@@ -239,24 +301,121 @@ export function ChatView() {
                 setTimeout(() => inputRef.current?.focus(), 50);
             }
         },
-        [input, sending, config, conversationId, isOnline, inventoryEnabled, paymentsEnabled, compareEnabled, locale],
+        [
+            input,
+            sending,
+            config,
+            conversationId,
+            isOnline,
+            inventoryEnabled,
+            paymentsEnabled,
+            compareEnabled,
+            locale,
+        ],
     );
 
-    // Auto-send with a specific text (used by vehicle card buttons)
     const quickSend = useCallback(
-        (text: string, opts?: { action?: string; vin?: string }) => {
+        (text: string, opts?: SendOpts) => {
             setInput('');
             void sendMessage(text, opts);
         },
         [sendMessage],
     );
 
+    const handleToggleCompare = useCallback(
+        (vin: string) => {
+            const upper = vin.toUpperCase();
+            const current = loadCompareVins(config.tenantSlug, config.locationSlug);
+            if (!current.includes(upper) && current.length >= MAX_COMPARE_VEHICLES) {
+                setCompareNotice(t(locale, 'compareMax'));
+                return;
+            }
+            setCompareNotice(null);
+            const next = toggleCompareVin(
+                config.tenantSlug,
+                config.locationSlug,
+                vin,
+            );
+            setCompareVins(next);
+        },
+        [config.tenantSlug, config.locationSlug, locale],
+    );
+
+    const handleSendCompare = useCallback(() => {
+        if (compareVins.length < 2) return;
+        const vins = compareVins.join(', ');
+        const text = t(locale, 'compareSend', { vins });
+        clearCompareVins(config.tenantSlug, config.locationSlug);
+        setCompareVins([]);
+        quickSend(text, { action: 'vehicle_compare' });
+    }, [compareVins, config.tenantSlug, config.locationSlug, locale, quickSend]);
+
+    const handleLeadSubmit = (e: FormEvent) => {
+        e.preventDefault();
+        setLeadError(null);
+        if (!leadFirst.trim() || !leadLast.trim()) {
+            setLeadError(t(locale, 'contactRequired'));
+            return;
+        }
+        if (!leadEmail.trim() && !leadPhone.trim()) {
+            setLeadError(t(locale, 'contactRequired'));
+            return;
+        }
+        if (consentLabel && !leadConsent) {
+            setLeadError(t(locale, 'consentRequired'));
+            return;
+        }
+
+        const parts = [
+            `Lead inquiry — Name: ${leadFirst.trim()} ${leadLast.trim()}`,
+            leadEmail.trim() ? `Email: ${leadEmail.trim()}` : null,
+            leadPhone.trim() ? `Phone: ${leadPhone.trim()}` : null,
+            leadConsent ? 'Consent: accepted' : null,
+        ].filter(Boolean);
+
+        const message = parts.join('. ');
+        setLeadFirst('');
+        setLeadLast('');
+        setLeadEmail('');
+        setLeadPhone('');
+        setLeadConsent(false);
+        void sendMessage(message, {
+            action: 'lead_capture',
+            confirmationKey: 'leadSubmitted',
+        });
+    };
+
+    const showQuickActions =
+        serviceEnabled ||
+        partsEnabled ||
+        handoffEnabled ||
+        appointmentsEnabled ||
+        (inventoryEnabled && compareEnabled) ||
+        inventoryEnabled ||
+        paymentsEnabled ||
+        multilingual ||
+        savedEnabled;
+
     return (
         <div
             className="amqur-chat-root"
             style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
         >
-            {/* ── Message thread ── */}
+            {savedEnabled && savedDrawerOpen && (
+                <SavedVehiclesDrawer
+                    locale={locale}
+                    vins={savedVins}
+                    onClose={() => setSavedDrawerOpen(false)}
+                    onAsk={(vin) => {
+                        setSavedDrawerOpen(false);
+                        quickSend(t(locale, 'askAboutSaved', { vin }), {
+                            action: 'vehicle_detail',
+                            vin,
+                        });
+                    }}
+                />
+            )}
+
             <div
                 role="log"
                 aria-live="polite"
@@ -272,7 +431,6 @@ export function ChatView() {
             >
                 {messages.map((msg) => (
                     <div key={msg.id}>
-                        {/* Text bubble */}
                         {msg.text && (
                             <div
                                 style={{
@@ -305,7 +463,6 @@ export function ChatView() {
                             </div>
                         )}
 
-                        {/* ── Payment summary card ── */}
                         {paymentsEnabled && msg.payment && (
                             <div style={{ clear: 'both', marginTop: msg.text ? '8px' : 0 }}>
                                 <div
@@ -339,26 +496,31 @@ export function ChatView() {
                                             VIN {msg.payment.vehicleVin}
                                         </div>
                                     )}
-                                    {/* Quick CTA after payment */}
                                     <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
                                         <button
                                             style={btnStyle('primary')}
                                             onClick={() => quickSend(`I want to schedule a test drive for ${msg.payment!.vehicleVin ?? 'this vehicle'}`)}
                                         >
-                                            Test drive
+                                            {t(locale, 'testDrive')}
                                         </button>
-                                        <button
-                                            style={btnStyle('secondary')}
-                                            onClick={() => quickSend(`Can I speak with someone about this deal?`)}
-                                        >
-                                            Talk to someone
-                                        </button>
+                                        {handoffEnabled && (
+                                            <button
+                                                style={btnStyle('secondary')}
+                                                onClick={() =>
+                                                    quickSend(t(locale, 'talkToSomeone'), {
+                                                        action: 'handoff',
+                                                        confirmationKey: 'requestSaved',
+                                                    })
+                                                }
+                                            >
+                                                {t(locale, 'talkToSomeone')}
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* ── Vehicle compare table ── */}
                         {inventoryEnabled &&
                             msg.compare &&
                             msg.vehicles &&
@@ -368,7 +530,6 @@ export function ChatView() {
                             </div>
                         )}
 
-                        {/* ── Vehicle carousel ── */}
                         {inventoryEnabled &&
                             !msg.compare &&
                             msg.vehicles &&
@@ -381,7 +542,9 @@ export function ChatView() {
                                         onAction={quickSend}
                                         paymentsEnabled={paymentsEnabled}
                                         savedEnabled={savedEnabled}
+                                        compareEnabled={compareEnabled}
                                         saved={savedVins.includes(v.vin.toUpperCase())}
+                                        inCompare={compareVins.includes(v.vin.toUpperCase())}
                                         onToggleSave={() => {
                                             const next = toggleSavedVin(
                                                 config.tenantSlug,
@@ -390,12 +553,15 @@ export function ChatView() {
                                             );
                                             setSavedVins(next);
                                         }}
+                                        onToggleCompare={() => handleToggleCompare(v.vin)}
                                         labels={{
                                             details: t(locale, 'details'),
                                             payment: t(locale, 'payment'),
                                             hold: t(locale, 'hold'),
                                             save: t(locale, 'save'),
                                             compare: t(locale, 'compare'),
+                                            addToCompare: t(locale, 'addToCompare'),
+                                            inCompare: t(locale, 'inCompare'),
                                         }}
                                     />
                                 ))}
@@ -415,21 +581,20 @@ export function ChatView() {
                             </div>
                         )}
 
-                        {/* Clearfix */}
                         {msg.isError && lastFailedUserText && (
                             <div style={{ clear: 'both', marginTop: '8px' }}>
                                 <button
                                     type="button"
                                     style={btnStyle('secondary')}
                                     onClick={() => {
-                                        const t = lastFailedUserText;
+                                        const retryText = lastFailedUserText;
                                         setLastFailedUserText(null);
-                                        void sendMessage(t);
+                                        void sendMessage(retryText);
                                     }}
                                     disabled={sending || !isOnline}
-                                    aria-label="Retry last message"
+                                    aria-label={t(locale, 'retry')}
                                 >
-                                    Retry
+                                    {t(locale, 'retry')}
                                 </button>
                             </div>
                         )}
@@ -453,7 +618,27 @@ export function ChatView() {
                     </div>
                 )}
 
-                {(serviceEnabled || partsEnabled) && (
+                {leadCaptureEnabled && (
+                    <LeadCaptureForm
+                        locale={locale}
+                        consentLabel={consentLabel}
+                        firstName={leadFirst}
+                        lastName={leadLast}
+                        email={leadEmail}
+                        phone={leadPhone}
+                        consent={leadConsent}
+                        error={leadError}
+                        disabled={sending || !isOnline}
+                        onFirstNameChange={setLeadFirst}
+                        onLastNameChange={setLeadLast}
+                        onEmailChange={setLeadEmail}
+                        onPhoneChange={setLeadPhone}
+                        onConsentChange={setLeadConsent}
+                        onSubmit={handleLeadSubmit}
+                    />
+                )}
+
+                {showQuickActions && (
                     <div
                         style={{
                             display: 'flex',
@@ -462,13 +647,20 @@ export function ChatView() {
                             marginBottom: 8,
                         }}
                     >
+                        {savedEnabled && (
+                            <button
+                                type="button"
+                                style={btnStyle('secondary')}
+                                onClick={() => setSavedDrawerOpen((o) => !o)}
+                            >
+                                {t(locale, 'saved')} ({savedVins.length})
+                            </button>
+                        )}
                         {serviceEnabled && (
                             <button
                                 type="button"
                                 style={btnStyle('secondary')}
-                                onClick={() =>
-                                    quickSend(t(locale, 'serviceHelp'))
-                                }
+                                onClick={() => quickSend(t(locale, 'serviceHelp'))}
                             >
                                 {t(locale, 'serviceHelp')}
                             </button>
@@ -477,22 +669,62 @@ export function ChatView() {
                             <button
                                 type="button"
                                 style={btnStyle('secondary')}
-                                onClick={() =>
-                                    quickSend(t(locale, 'partsHelp'))
-                                }
+                                onClick={() => quickSend(t(locale, 'partsHelp'))}
                             >
                                 {t(locale, 'partsHelp')}
                             </button>
                         )}
-                        <button
-                            type="button"
-                            style={btnStyle('secondary')}
-                            onClick={() =>
-                                quickSend(t(locale, 'talkToSomeone'))
-                            }
-                        >
-                            {t(locale, 'talkToSomeone')}
-                        </button>
+                        {appointmentsEnabled && (
+                            <button
+                                type="button"
+                                style={btnStyle('secondary')}
+                                onClick={() =>
+                                    quickSend(t(locale, 'requestAppointment'), {
+                                        action: 'appointment_request',
+                                        confirmationKey: 'requestSaved',
+                                    })
+                                }
+                            >
+                                {t(locale, 'requestAppointment')}
+                            </button>
+                        )}
+                        {inventoryEnabled && (
+                            <button
+                                type="button"
+                                style={btnStyle('secondary')}
+                                onClick={() => quickSend(t(locale, 'tradeInterest'))}
+                            >
+                                {t(locale, 'tradeInterest')}
+                            </button>
+                        )}
+                        {paymentsEnabled && (
+                            <button
+                                type="button"
+                                style={btnStyle('secondary')}
+                                onClick={() =>
+                                    quickSend(t(locale, 'financeHandoff'), {
+                                        action: 'finance_handoff',
+                                        confirmationKey: 'requestSaved',
+                                    })
+                                }
+                            >
+                                {t(locale, 'financeHandoff')}
+                            </button>
+                        )}
+                        {handoffEnabled && (
+                            <button
+                                type="button"
+                                style={btnStyle('secondary')}
+                                onClick={() =>
+                                    quickSend(t(locale, 'talkToSomeone'), {
+                                        action: 'handoff',
+                                        confirmationKey: 'requestSaved',
+                                    })
+                                }
+                            >
+                                {t(locale, 'talkToSomeone')}
+                            </button>
+                        )}
                         {multilingual && (
                             <button
                                 type="button"
@@ -508,7 +740,53 @@ export function ChatView() {
                     </div>
                 )}
 
-                {/* ── Typing indicator ── */}
+                {compareEnabled && compareVins.length > 0 && (
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            alignItems: 'center',
+                            gap: 8,
+                            padding: '8px 10px',
+                            background: 'rgba(0,0,0,0.04)',
+                            borderRadius: 10,
+                            marginBottom: 8,
+                        }}
+                    >
+                        <span style={{ fontSize: 13, fontWeight: 600 }}>
+                            {t(locale, 'compareSelected', {
+                                count: String(compareVins.length),
+                            })}
+                        </span>
+                        {compareVins.map((vin) => (
+                            <button
+                                key={vin}
+                                type="button"
+                                style={btnStyle('ghost')}
+                                onClick={() => handleToggleCompare(vin)}
+                            >
+                                {vin.slice(-6)} ×
+                            </button>
+                        ))}
+                        {compareVins.length >= 2 && (
+                            <button
+                                type="button"
+                                style={btnStyle('primary')}
+                                disabled={sending}
+                                onClick={handleSendCompare}
+                            >
+                                {t(locale, 'compare')}
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {compareNotice && (
+                    <div role="status" style={{ fontSize: 12, opacity: 0.7 }}>
+                        {compareNotice}
+                    </div>
+                )}
+
                 {sending && (
                     <div className="amqur-skel" style={{ maxWidth: '200px' }}>
                         <div className="amqur-skelbar" style={{ width: '60%' }} />
@@ -519,7 +797,6 @@ export function ChatView() {
                 <div ref={bottomRef} />
             </div>
 
-            {/* ── Composer ── */}
             <div
                 style={{
                     borderTop: '1px solid rgba(0,0,0,0.06)',
@@ -567,31 +844,205 @@ export function ChatView() {
     );
 }
 
-// ─────────────────────────────
-// Vehicle card sub-component
-// ─────────────────────────────
+function LeadCaptureForm({
+    locale,
+    consentLabel,
+    firstName,
+    lastName,
+    email,
+    phone,
+    consent,
+    error,
+    disabled,
+    onFirstNameChange,
+    onLastNameChange,
+    onEmailChange,
+    onPhoneChange,
+    onConsentChange,
+    onSubmit,
+}: {
+    locale: Locale;
+    consentLabel: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    consent: boolean;
+    error: string | null;
+    disabled: boolean;
+    onFirstNameChange: (v: string) => void;
+    onLastNameChange: (v: string) => void;
+    onEmailChange: (v: string) => void;
+    onPhoneChange: (v: string) => void;
+    onConsentChange: (v: boolean) => void;
+    onSubmit: (e: FormEvent) => void;
+}) {
+    const fieldStyle: CSSProperties = {
+        flex: 1,
+        minWidth: 120,
+        padding: '8px 10px',
+        borderRadius: 8,
+        border: '1px solid rgba(0,0,0,0.10)',
+        fontSize: 13,
+    };
+
+    return (
+        <form
+            onSubmit={onSubmit}
+            style={{
+                border: '1px solid rgba(0,0,0,0.08)',
+                borderRadius: 12,
+                padding: 12,
+                background: 'rgba(255,255,255,0.85)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+                marginBottom: 8,
+            }}
+        >
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <input
+                    type="text"
+                    required
+                    value={firstName}
+                    onChange={(e) => onFirstNameChange(e.target.value)}
+                    placeholder={t(locale, 'firstName')}
+                    aria-label={t(locale, 'firstName')}
+                    disabled={disabled}
+                    style={fieldStyle}
+                />
+                <input
+                    type="text"
+                    required
+                    value={lastName}
+                    onChange={(e) => onLastNameChange(e.target.value)}
+                    placeholder={t(locale, 'lastName')}
+                    aria-label={t(locale, 'lastName')}
+                    disabled={disabled}
+                    style={fieldStyle}
+                />
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => onEmailChange(e.target.value)}
+                    placeholder={t(locale, 'email')}
+                    aria-label={t(locale, 'email')}
+                    disabled={disabled}
+                    style={fieldStyle}
+                />
+                <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => onPhoneChange(e.target.value)}
+                    placeholder={t(locale, 'phone')}
+                    aria-label={t(locale, 'phone')}
+                    disabled={disabled}
+                    style={fieldStyle}
+                />
+            </div>
+            {consentLabel && (
+                <label style={{ display: 'flex', gap: 8, fontSize: 12, alignItems: 'flex-start' }}>
+                    <input
+                        type="checkbox"
+                        checked={consent}
+                        onChange={(e) => onConsentChange(e.target.checked)}
+                        disabled={disabled}
+                    />
+                    <span>{consentLabel}</span>
+                </label>
+            )}
+            {error && (
+                <div role="alert" style={{ fontSize: 12, color: '#991b1b' }}>
+                    {error}
+                </div>
+            )}
+            <button type="submit" style={btnStyle('primary')} disabled={disabled}>
+                {t(locale, 'submitLead')}
+            </button>
+        </form>
+    );
+}
+
+function SavedVehiclesDrawer({
+    locale,
+    vins,
+    onClose,
+    onAsk,
+}: {
+    locale: Locale;
+    vins: string[];
+    onClose: () => void;
+    onAsk: (vin: string) => void;
+}) {
+    return (
+        <div
+            style={{
+                borderBottom: '1px solid rgba(0,0,0,0.06)',
+                padding: '10px 14px',
+                background: 'rgba(255,255,255,0.92)',
+            }}
+        >
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <strong style={{ fontSize: 14 }}>{t(locale, 'savedVehicles')}</strong>
+                <button type="button" style={btnStyle('ghost')} onClick={onClose}>
+                    {t(locale, 'dismiss')}
+                </button>
+            </div>
+            {vins.length === 0 ? (
+                <p style={{ margin: 0, fontSize: 13, opacity: 0.7 }}>
+                    {t(locale, 'noSavedVehicles')}
+                </p>
+            ) : (
+                <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {vins.map((vin) => (
+                        <li key={vin} style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                            <span style={{ fontFamily: 'monospace', fontSize: 12 }}>{vin}</span>
+                            <button
+                                type="button"
+                                style={btnStyle('secondary')}
+                                onClick={() => onAsk(vin)}
+                            >
+                                {t(locale, 'details')}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+}
 
 function VehicleCard({
     vehicle: v,
     onAction,
     paymentsEnabled = true,
     savedEnabled = false,
+    compareEnabled = false,
     saved = false,
+    inCompare = false,
     onToggleSave,
+    onToggleCompare,
     labels,
 }: {
     vehicle: Vehicle;
-    onAction: (text: string, opts?: { action?: string; vin?: string }) => void;
+    onAction: (text: string, opts?: SendOpts) => void;
     paymentsEnabled?: boolean;
     savedEnabled?: boolean;
+    compareEnabled?: boolean;
     saved?: boolean;
+    inCompare?: boolean;
     onToggleSave?: () => void;
+    onToggleCompare?: () => void;
     labels: {
         details: string;
         payment: string;
         hold: string;
         save: string;
         compare: string;
+        addToCompare: string;
+        inCompare: string;
     };
 }) {
     const title = [v.year, v.make, v.model].filter(Boolean).join(' ');
@@ -609,7 +1060,6 @@ function VehicleCard({
                 gap: '8px',
             }}
         >
-            {/* Photo */}
             {v.photos && v.photos[0] && (
                 <img
                     src={v.photos[0]}
@@ -624,7 +1074,6 @@ function VehicleCard({
                 />
             )}
 
-            {/* Title + status */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                 <strong style={{ fontSize: '15px', lineHeight: 1.3 }}>{title}</strong>
                 {isHeld && (
@@ -664,7 +1113,6 @@ function VehicleCard({
                 )}
             </div>
 
-            {/* Actions — structured action/vin for backend */}
             {!isHeld && (
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     <button
@@ -680,18 +1128,18 @@ function VehicleCard({
                         {labels.details}
                     </button>
                     {paymentsEnabled && (
-                    <button
-                        type="button"
-                        style={btnStyle('secondary')}
-                        onClick={() =>
-                            onAction(`Payment estimate for ${v.vin}`, {
-                                action: 'payment_estimate',
-                                vin: v.vin,
-                            })
-                        }
-                    >
-                        {labels.payment}
-                    </button>
+                        <button
+                            type="button"
+                            style={btnStyle('secondary')}
+                            onClick={() =>
+                                onAction(`Payment estimate for ${v.vin}`, {
+                                    action: 'payment_estimate',
+                                    vin: v.vin,
+                                })
+                            }
+                        >
+                            {labels.payment}
+                        </button>
                     )}
                     <button
                         type="button"
@@ -715,15 +1163,21 @@ function VehicleCard({
                             {saved ? `✓ ${labels.save}` : labels.save}
                         </button>
                     )}
+                    {compareEnabled && (
+                        <button
+                            type="button"
+                            style={btnStyle('ghost')}
+                            aria-pressed={inCompare}
+                            onClick={() => onToggleCompare?.()}
+                        >
+                            {inCompare ? labels.inCompare : labels.addToCompare}
+                        </button>
+                    )}
                 </div>
             )}
         </div>
     );
 }
-
-// ─────────────────────────────
-// Shared button style helper
-// ─────────────────────────────
 
 function btnStyle(variant: 'primary' | 'secondary' | 'ghost'): CSSProperties {
     const base: CSSProperties = {
@@ -742,6 +1196,5 @@ function btnStyle(variant: 'primary' | 'secondary' | 'ghost'): CSSProperties {
     if (variant === 'secondary') {
         return { ...base, background: 'rgba(0,0,0,0.06)', color: 'var(--amqur-text, #141414)' };
     }
-    // ghost
     return { ...base, background: 'transparent', color: 'var(--amqur-text, #141414)', border: '1px solid rgba(0,0,0,0.12)' };
 }
