@@ -32,11 +32,28 @@ export type Vehicle = {
     status?: string | null;
     lastSeenAt?: string | null;
     freshnessState?: string | null;
+    /** Synthetic local-demo fixture — always badged, never presented as dealership stock. */
+    simulated?: boolean;
 };
+
+export type OtdLine = { label: string; amount: number; kind: 'price' | 'dealer_fee' | 'tax' | 'government' };
 
 export type Card =
     | { kind: 'appointment'; id: string; type: string; status: string; outcome: 'requested' | 'pending' | 'confirmed'; date: string | null; time: string | null; label: string; verified: boolean }
-    | { kind: 'credit_application'; label: string; url: string; providerName: string | null }
+    | { kind: 'credit_application'; label: string; url: string; providerName: string | null; cta?: string; note?: string; preview?: boolean }
+    | {
+          kind: 'otd_quote';
+          id: string;
+          vin: string;
+          vehicleLabel: string;
+          status: 'estimate' | 'requested';
+          paymentMethod: 'CASH' | 'FINANCE' | 'LEASE' | 'UNDECIDED';
+          lines: OtdLine[];
+          total: number | null;
+          assumptions: string[];
+          missingInputs: string[];
+          preliminary: true;
+      }
     | { kind: 'finance_request'; id: string; status: string }
     | { kind: 'trade'; id: string; summary: string; appraisalVerified: false }
     | { kind: 'parts'; id: string; status: string; fitmentVerified: boolean; priceVerified: boolean; availabilityVerified: boolean; etaVerified: boolean; needsVin: boolean }
@@ -50,7 +67,8 @@ export type Journey = {
     trade?: { summary: string; requestId?: string } | null;
     appointment?: { id: string; label: string; status: string } | null;
     creditApplication?: { state: string } | null;
-    service?: { need?: string } | null;
+    otdQuote?: { status: string; total: number | null } | null;
+    service?: { need?: string; vehicle?: string } | null;
     parts?: { need?: string; status?: string } | null;
     handoff?: { state: string } | null;
 };

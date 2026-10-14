@@ -148,7 +148,8 @@ test.describe('Concierge Canvas', () => {
             const el = (host as HTMLElement).shadowRoot!.querySelector('.amq-storefront__welcome') as HTMLElement;
             return getComputedStyle(el).fontSize;
         });
-        expect(fontSize).toBe('16px');
+        // The widget's own type scale (17px) — the host's forced 30px must not leak in.
+        expect(fontSize).toBe('17px');
     });
 
     test('reduced motion: replies are not artificially delayed', async ({ page }, info) => {

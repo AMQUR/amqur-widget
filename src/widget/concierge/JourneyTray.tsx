@@ -8,8 +8,10 @@ export function JourneyTray({ journey, lang }: { journey: Journey; lang: Lang })
     if (journey.payment) items.push({ k: 'p', label: c(lang, 'estimate'), value: `${money(journey.payment.monthly, lang)}/mo` });
     if (journey.trade) items.push({ k: 't', label: c(lang, 'trade'), value: journey.trade.summary });
     if (journey.appointment) items.push({ k: 'a', label: c(lang, 'appointment'), value: `${journey.appointment.label} · ${journey.appointment.status === 'CONFIRMED' ? c(lang, 'confirmed') : c(lang, 'requested')}` });
-    if (journey.creditApplication) items.push({ k: 'c', label: c(lang, 'credit'), value: '↗' });
-    if (journey.service?.need) items.push({ k: 's', label: c(lang, 'serviceNeed'), value: journey.service.need });
+    if (journey.otdQuote) items.push({ k: 'o', label: c(lang, 'otd'), value: journey.otdQuote.total != null ? money(journey.otdQuote.total, lang) : c(lang, 'otdReq') });
+    if (journey.creditApplication) items.push({ k: 'c', label: c(lang, 'credit'), value: c(lang, 'creditOffered') });
+    if (journey.service?.need || journey.service?.vehicle)
+        items.push({ k: 's', label: c(lang, 'serviceNeed'), value: [journey.service.need, journey.service.vehicle].filter(Boolean).join(' · ') });
     if (journey.parts?.need) items.push({ k: 'pa', label: c(lang, 'partsNeed'), value: journey.parts.need });
     if (journey.handoff) items.push({ k: 'h', label: c(lang, 'team'), value: journey.handoff.state === 'notified' ? c(lang, 'handoffNotified') : c(lang, 'handoffQueued') });
     if (!items.length) return null;

@@ -26,7 +26,8 @@ export function Storefront(props: {
                 <div className={`amq-chip amq-chip--${sales.open ? 'ok' : 'neutral'}`} role="status">
                     {sales.open
                         ? `${c(props.lang, 'openNow')} ${sales.closesAt ? c(props.lang, 'closesAt', { t: sales.closesAt }) : ''}`
-                        : `${c(props.lang, 'closedNow')}${sales.nextOpen ? ` · ${c(props.lang, 'opens', { d: '', t: sales.nextOpen.at })}` : ''}`}
+                        : `${c(props.lang, 'closedNow')}${sales.nextOpen ? ` · ${c(props.lang, 'opens', { d: '', t: sales.nextOpen.at }).replace('  ', ' ')}` : ''}`}
+                    {status.simulated ? ` · ${c(props.lang, 'demoHours')}` : ''}
                 </div>
             )}
             <p className="amq-storefront__welcome">{props.welcome}</p>

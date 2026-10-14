@@ -155,4 +155,4 @@ export async function fetchStoreStatus(lang: string): Promise<StoreStatus> {
 }
 
 export type DeptStatus = { open: boolean; closesAt: string | null; nextOpen: { date: string; at: string } | null } | null;
-export type StoreStatus = { known: boolean; timezone?: string; summary?: string | null; sales?: DeptStatus; service?: DeptStatus; parts?: DeptStatus };
+export type StoreStatus = { known: boolean; simulated?: boolean; timezone?: string; summary?: string | null; sales?: DeptStatus; service?: DeptStatus; parts?: DeptStatus };

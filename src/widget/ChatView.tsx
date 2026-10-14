@@ -5,7 +5,8 @@ import { CompareTable } from './CompareTable';
 import { loadCompareVins, MAX_COMPARE_VEHICLES, toggleCompareVin, clearCompareVins } from './compareVehicles';
 import { useConcierge } from './concierge/useConcierge';
 import { collectPageContext } from './concierge/pageContext';
-import { VehicleCard } from './concierge/VehicleCard';
+import { VehicleCard, VehicleCarousel } from './concierge/VehicleCard';
+import { SendIcon } from './icons';
 import { CardView } from './concierge/Cards';
 import { JourneyTray } from './concierge/JourneyTray';
 import { Storefront } from './concierge/Storefront';
@@ -120,7 +121,7 @@ export function ChatView() {
                             {m.vehicles && m.vehicles.length > 0 && (m.compare ? (
                                 <CompareTable vehicles={m.vehicles} />
                             ) : (
-                                <div className="amq-cards" role="list">
+                                <VehicleCarousel count={m.vehicles.length} lang={lang}>
                                     {m.vehicles.map((v) => (
                                         <div role="listitem" key={v.vin}>
                                             <VehicleCard
@@ -137,10 +138,13 @@ export function ChatView() {
                                             />
                                         </div>
                                     ))}
-                                </div>
+                                </VehicleCarousel>
                             ))}
                             {m.cards?.map((card, i) => <CardView key={`${m.id}-${i}`} card={card} lang={lang} apiBaseUrl={config.apiBaseUrl} />)}
-                            {m.disclaimer && <p className="amq-disclaimer">{m.disclaimer}</p>}
+                            {/* One disclosure per message: cards and vehicle estimates carry their own. */}
+                            {m.disclaimer && m.vehicles?.length && !m.vehicles.some((v) => v.estimatedPayment != null) && !m.cards?.length ? (
+                                <p className="amq-disclaimer">{m.disclaimer}</p>
+                            ) : null}
                             {m.isError && conv.canRetry && (
                                 <button type="button" className="amq-btn" onClick={conv.retry}>
                                     {c(lang, 'retry')}
@@ -150,10 +154,10 @@ export function ChatView() {
                     ),
                 )}
                 {conv.typing && (
-                    <div className="amq-typing" role="status" aria-label={c(lang, 'typing')}>
-                        <span />
-                        <span />
-                        <span />
+                    <div className="amq-typing" role="status" aria-label={c(lang, 'typingAi')}>
+                        <span aria-hidden />
+                        <span aria-hidden />
+                        <span aria-hidden />
                     </div>
                 )}
                 {conv.aiPaused && (
@@ -186,8 +190,19 @@ export function ChatView() {
             )}
 
             <form className="amq-composer" onSubmit={submit}>
+                {multilingual && (
+                    <button
+                        type="button"
+                        className="amq-lang"
+                        onClick={() => conv.setLanguage(lang === 'es' ? 'en' : 'es')}
+                        lang={lang === 'es' ? 'en' : 'es'}
+                        aria-label={lang === 'es' ? 'Switch to English' : 'Cambiar a español'}
+                    >
+                        {lang === 'es' ? 'EN' : 'ES'}
+                    </button>
+                )}
                 <label className="amq-sr" htmlFor="amq-input">
-                    {c(lang, 'placeholder')}
+                    {c(lang, 'inputLabel')}
                 </label>
                 <textarea
                     id="amq-input"
@@ -207,14 +222,9 @@ export function ChatView() {
                     enterKeyHint="send"
                 />
                 <button type="submit" className="amq-send" disabled={!input.trim() || conv.busy || !online} aria-label={c(lang, 'send')}>
-                    ➤
+                    <SendIcon />
                 </button>
             </form>
-            {multilingual && (
-                <button type="button" className="amq-lang" onClick={() => conv.setLanguage(lang === 'es' ? 'en' : 'es')} lang={lang === 'es' ? 'en' : 'es'}>
-                    {c(lang, 'language')}
-                </button>
-            )}
             <ProactiveEngagement lang={lang} pageContext={pageContext} onAccept={(action) => void conv.send('', action)} hasConversation={conv.messages.length > 0} />
         </div>
     );
