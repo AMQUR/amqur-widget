@@ -101,6 +101,12 @@ const EN = {
     typingAi: 'Assistant is replying',
     otdReq: 'Requested',
     creditOffered: 'Link shared',
+    tradeOffer: 'Dealer offer',
+    tradeAppraisal: 'Dealer appraisal',
+    tradeEstimate: 'Estimate — not an offer',
+    validThrough: 'Valid through {d}',
+    tradeOfferNote: 'Written offer from the dealership. Separate from any financing decision.',
+    tradeEstimateNote: 'Not an offer — a manager confirms the final number.',
 };
 
 const ES: typeof EN = {
@@ -204,6 +210,12 @@ const ES: typeof EN = {
     typingAi: 'El asistente está respondiendo',
     otdReq: 'Solicitado',
     creditOffered: 'Enlace enviado',
+    tradeOffer: 'Oferta de la agencia',
+    tradeAppraisal: 'Valuación de la agencia',
+    tradeEstimate: 'Estimado — no es oferta',
+    validThrough: 'Válida hasta {d}',
+    tradeOfferNote: 'Oferta escrita de la agencia. Independiente de cualquier decisión de financiamiento.',
+    tradeEstimateNote: 'No es una oferta — un gerente confirma el monto final.',
 };
 
 export type CopyKey = keyof typeof EN;

@@ -127,3 +127,23 @@ describe('vehicle card + carousel', () => {
         expect(html).not.toContain('Next vehicle');
     });
 });
+
+describe('trade card', () => {
+    it('no value until the dealership records one', () => {
+        const html = render({ kind: 'trade', id: 't', summary: '2019 Jeep Cherokee', appraisalVerified: false, value: null });
+        expect(html).not.toMatch(/\$\d/);
+        expect(html).toContain('Appraisal by the dealership');
+    });
+    it('a manager offer shows amount, expiry and the financing separation', () => {
+        const html = render({ kind: 'trade', id: 't', summary: '2019 Jeep Cherokee', appraisalVerified: true, value: { kind: 'FINAL_OFFER', amount: 19250, low: null, high: null, expiresAt: '2026-10-21T12:00:00Z' } });
+        expect(html).toContain('$19,250');
+        expect(html).toContain('Dealer offer');
+        expect(html).toContain('Valid through');
+        expect(html).toContain('Separate from any financing decision');
+    });
+    it('estimates are labeled as not offers', () => {
+        const html = render({ kind: 'trade', id: 't', summary: 'x', appraisalVerified: true, value: { kind: 'MARKET_ESTIMATE', amount: null, low: 18000, high: 21000, expiresAt: null } });
+        expect(html).toContain('Estimate — not an offer');
+        expect(html).toContain('$18,000–$21,000');
+    });
+});

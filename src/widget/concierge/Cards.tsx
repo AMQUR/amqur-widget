@@ -140,14 +140,29 @@ export function CardView({ card, lang, apiBaseUrl }: { card: Card; lang: Lang; a
                     </Details>
                 </section>
             );
-        case 'trade':
+        case 'trade': {
+            const v = card.value;
+            const label = v
+                ? v.kind === 'FINAL_OFFER'
+                    ? c(lang, 'tradeOffer')
+                    : v.kind === 'DEALER_APPRAISAL'
+                      ? c(lang, 'tradeAppraisal')
+                      : c(lang, 'tradeEstimate')
+                : null;
+            const amount = v ? (v.amount != null ? money(v.amount, lang) : v.low != null && v.high != null ? `${money(v.low, lang)}–${money(v.high, lang)}` : null) : null;
             return (
-                <section className="amq-card" aria-label={c(lang, 'trade')}>
-                    <span className="amq-card__eyebrow">{c(lang, 'trade')}</span>
+                <section className={`amq-card${v?.kind === 'FINAL_OFFER' ? ' amq-card--ok' : ''}`} aria-label={c(lang, 'trade')}>
+                    <header>
+                        <span className="amq-card__eyebrow">{c(lang, 'trade')}</span>
+                        {label && <span className={`amq-chip amq-chip--${v?.kind === 'FINAL_OFFER' ? 'ok' : 'info'}`}>{label}</span>}
+                    </header>
                     <div className="amq-card__title">{card.summary}</div>
-                    <p className="amq-muted amq-small">{c(lang, 'tradeNote')}</p>
+                    {amount && <div className="amq-card__big">{amount}</div>}
+                    {v?.expiresAt && <p className="amq-muted amq-small">{c(lang, 'validThrough', { d: new Date(v.expiresAt).toLocaleDateString(lang === 'es' ? 'es-US' : 'en-US', { month: 'short', day: 'numeric' }) })}</p>}
+                    <p className="amq-muted amq-small">{v ? (v.kind === 'FINAL_OFFER' ? c(lang, 'tradeOfferNote') : c(lang, 'tradeEstimateNote')) : c(lang, 'tradeNote')}</p>
                 </section>
             );
+        }
         case 'parts': {
             const row = (label: string, ok: boolean) => (
                 <li>

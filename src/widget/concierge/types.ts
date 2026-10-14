@@ -55,7 +55,13 @@ export type Card =
           preliminary: true;
       }
     | { kind: 'finance_request'; id: string; status: string }
-    | { kind: 'trade'; id: string; summary: string; appraisalVerified: false }
+    | {
+          kind: 'trade';
+          id: string;
+          summary: string;
+          appraisalVerified: boolean;
+          value?: { kind: 'MARKET_ESTIMATE' | 'PRELIMINARY_ESTIMATE' | 'DEALER_APPRAISAL' | 'FINAL_OFFER'; amount: number | null; low: number | null; high: number | null; expiresAt: string | null } | null;
+      }
     | { kind: 'parts'; id: string; status: string; fitmentVerified: boolean; priceVerified: boolean; availabilityVerified: boolean; etaVerified: boolean; needsVin: boolean }
     | { kind: 'handoff'; state: 'requested' | 'queued' | 'notified' | 'recorded'; escalationId: string }
     | { kind: 'hours'; summary: string; openNow: boolean | null; timezone: string }
