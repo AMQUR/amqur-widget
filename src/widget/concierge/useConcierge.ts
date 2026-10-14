@@ -11,6 +11,29 @@ const uid = () =>
 export type SendOptions = { action?: string; vin?: string; display?: string };
 
 /**
+ * The visible transcript (with its cards) survives a page refresh within the same tab.
+ * Keyed by store + signed conversation id; sessionStorage only, so it ends with the tab.
+ * The server keeps the real conversation state; this only restores what was on screen.
+ */
+function transcriptKey(): string | null {
+    const id = getConversationId();
+    if (!id) return null;
+    const cfg = getWidgetConfig();
+    return `amqur_transcript_${cfg.tenantSlug}_${cfg.locationSlug}_${id}`;
+}
+function loadTranscript(): { messages: UiMessage[]; journey: Journey } {
+    try {
+        const k = transcriptKey();
+        const raw = k ? sessionStorage.getItem(k) : null;
+        if (!raw) return { messages: [], journey: {} };
+        const v = JSON.parse(raw) as { messages?: UiMessage[]; journey?: Journey };
+        return { messages: Array.isArray(v.messages) ? v.messages : [], journey: v.journey ?? {} };
+    } catch {
+        return { messages: [], journey: {} };
+    }
+}
+
+/**
  * Conversation state for the Concierge Canvas.
  * - Real work starts immediately on send; typing presentation only pads an already-received
  *   answer (bounded, skipped for errors/urgent/reduced motion).
@@ -19,10 +42,11 @@ export type SendOptions = { action?: string; vin?: string; display?: string };
  * - Saved vehicles sync to the backend for the signed conversation; local list is a cache.
  */
 export function useConcierge(opts: { lang: Lang; pageContext: PageContext; savedEnabled: boolean }) {
-    const [messages, setMessages] = useState<UiMessage[]>([]);
+    const restored = useRef(loadTranscript());
+    const [messages, setMessages] = useState<UiMessage[]>(restored.current.messages);
     const [typing, setTyping] = useState(false);
     const [busy, setBusy] = useState(false);
-    const [journey, setJourney] = useState<Journey>({});
+    const [journey, setJourney] = useState<Journey>(restored.current.journey);
     const [handoffState, setHandoffState] = useState<string>('AI');
     const [aiPaused, setAiPaused] = useState(false);
     const [language, setLanguage] = useState<Lang>(opts.lang);
@@ -33,6 +57,19 @@ export function useConcierge(opts: { lang: Lang; pageContext: PageContext; saved
     const pageContextSent = useRef(false);
 
     const push = useCallback((m: UiMessage) => setMessages((prev) => [...prev, m]), []);
+
+    useEffect(() => {
+        try {
+            const k = transcriptKey();
+            if (k && messages.length)
+                sessionStorage.setItem(
+                    k,
+                    JSON.stringify({ messages: messages.filter((m) => !('isError' in m && m.isError)).slice(-60), journey }),
+                );
+        } catch {
+            /* storage full / blocked — the server still has the conversation */
+        }
+    }, [messages, journey]);
 
     const send = useCallback(
         async (text: string, options: SendOptions = {}) => {

@@ -9,11 +9,11 @@ export function JourneyTray({ journey, lang }: { journey: Journey; lang: Lang })
     if (journey.trade) items.push({ k: 't', label: c(lang, 'trade'), value: journey.trade.summary });
     if (journey.appointment) items.push({ k: 'a', label: c(lang, 'appointment'), value: `${journey.appointment.label} · ${journey.appointment.status === 'CONFIRMED' ? c(lang, 'confirmed') : c(lang, 'requested')}` });
     if (journey.otdQuote) items.push({ k: 'o', label: c(lang, 'otd'), value: journey.otdQuote.total != null ? money(journey.otdQuote.total, lang) : c(lang, 'otdReq') });
-    if (journey.creditApplication) items.push({ k: 'c', label: c(lang, 'credit'), value: c(lang, 'creditOffered') });
+    if (journey.creditApplication) items.push({ k: 'c', label: c(lang, 'credit'), value: journey.creditApplication.state === 'PREVIEW' ? c(lang, 'creditPreview') : c(lang, 'creditOffered') });
     if (journey.service?.need || journey.service?.vehicle)
         items.push({ k: 's', label: c(lang, 'serviceNeed'), value: [journey.service.need, journey.service.vehicle].filter(Boolean).join(' · ') });
     if (journey.parts?.need) items.push({ k: 'pa', label: c(lang, 'partsNeed'), value: journey.parts.need });
-    if (journey.handoff) items.push({ k: 'h', label: c(lang, 'team'), value: journey.handoff.state === 'notified' ? c(lang, 'handoffNotified') : c(lang, 'handoffQueued') });
+    if (journey.handoff) items.push({ k: 'h', label: c(lang, 'team'), value: journey.handoff.state === 'notified' ? c(lang, 'handoffNotified') : journey.handoff.state === 'queued' ? c(lang, 'handoffQueued') : c(lang, 'handoffLogged') });
     if (!items.length) return null;
     return (
         <nav className="amq-tray" aria-label={c(lang, 'journey')}>

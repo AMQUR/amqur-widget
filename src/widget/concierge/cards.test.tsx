@@ -103,7 +103,7 @@ describe('vehicle card + carousel', () => {
     it('badges simulated vehicles and uses a neutral placeholder (no stock photo)', () => {
         const html = renderToStaticMarkup(card(v));
         expect(html).toContain('Demo vehicle');
-        expect(html).toContain('Photo coming soon');
+        expect(html).toContain('No photo available');
         expect(html).not.toContain('<img');
         expect(html).toContain('Stock #DEMO-WR1');
     });
