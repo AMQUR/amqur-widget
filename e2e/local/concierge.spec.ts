@@ -26,7 +26,11 @@ async function boot(page: Page, opts: { aggressiveHostCss?: boolean } = {}) {
             w.__AMQUR_TENANT__ = tenant;
             w.__AMQUR_LOCATION__ = 'main';
             try {
-                localStorage.clear();
+                // Fresh visitor per test, but a reload in the same tab keeps the session.
+                if (!sessionStorage.getItem('__amqur_e2e_booted')) {
+                    localStorage.clear();
+                    sessionStorage.setItem('__amqur_e2e_booted', '1');
+                }
             } catch {
                 /* ignore */
             }
@@ -85,7 +89,8 @@ test.describe('Concierge Canvas', () => {
 
         // Conversation id is server-issued and persisted
         const stored = await page.evaluate(() => Object.entries(localStorage).find(([k]) => k.startsWith('amqur_conversation_v2_'))?.[1] ?? null);
-        expect(stored).toMatch(/^cv1\./);
+        expect(JSON.parse(stored ?? '{}').id).toMatch(/^cv1\./);
+        expect(typeof JSON.parse(stored ?? '{}').at).toBe('number');
 
         if (info.project.name === 'chromium') {
             await expect(dialog).toHaveScreenshot('concierge-sales-journey.png', { maxDiffPixelRatio: 0.08, mask: [page.locator('.amq-msg p'), page.locator('.amq-chip')] });
@@ -191,5 +196,27 @@ test.describe('Concierge Canvas', () => {
         await dialog.getByRole('button', { name: /^retry$/i }).click();
         await expect(page.locator('.amq-vcard').first()).toBeVisible({ timeout: 15_000 });
         await expect(dialog.getByRole('button', { name: /^retry$/i })).toHaveCount(0);
+    });
+
+    test('New conversation: fresh server id, empty transcript and tray; refresh resumes', async ({ page }, info) => {
+        test.skip(!['chromium', 'mobile-webkit'].includes(info.project.name), 'desktop + iPhone are enough');
+        const launcher = await boot(page);
+        await launcher.click();
+        await say(page, 'Do you have any Wranglers?');
+        const key = await page.evaluate(() => Object.keys(localStorage).find((k) => k.startsWith('amqur_conversation_v2_')) ?? '');
+        const first = await page.evaluate((k) => JSON.parse(localStorage.getItem(k) ?? '{}').id, key);
+        expect(first).toMatch(/^cv1\./);
+        // A normal refresh resumes the same conversation and keeps it on screen.
+        await page.reload();
+        await page.getByRole('button', { name: /open assistant/i }).click();
+        await expect(page.locator('.amq-msg--user').first()).toContainText('Wranglers');
+        // New conversation starts clean.
+        await page.getByRole('button', { name: /start a new conversation/i }).click();
+        await expect(page.locator('.amq-msg--user')).toHaveCount(0);
+        await say(page, 'hi');
+        const second = await page.evaluate((k) => JSON.parse(localStorage.getItem(k) ?? '{}').id, key);
+        expect(second).toMatch(/^cv1\./);
+        expect(second).not.toBe(first);
+        await expect(page.locator('.amq-msg--user')).toHaveCount(1);
     });
 });

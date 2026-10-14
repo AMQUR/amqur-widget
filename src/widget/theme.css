@@ -461,6 +461,9 @@
 .amq-header__team { font-size: 11.5px; color: var(--amqur-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .amq-dot { width: 7px; height: 7px; border-radius: 50%; background: #a3a3a3; flex: 0 0 7px; }
 .amq-dot--on { background: #16a34a; box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.16); }
+.amq-new { align-self: center; width: 44px; height: 44px; place-items: center; color: var(--amqur-text); margin-left: auto; }
+.amq-new:hover { background: rgba(0, 0, 0, 0.05); }
+.amq-new:focus-visible { outline: 3px solid color-mix(in srgb, var(--amqur-primary) 55%, white); outline-offset: 1px; }
 .amq-close { align-self: center; width: 44px; height: 44px; place-items: center; color: var(--amqur-text); }
 .amq-close:hover { background: rgba(0, 0, 0, 0.05); }
 .amq-close:focus-visible { outline: 3px solid color-mix(in srgb, var(--amqur-primary) 55%, white); outline-offset: 1px; }

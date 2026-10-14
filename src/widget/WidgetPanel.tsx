@@ -5,6 +5,7 @@ import { detectLocale, t, type Locale } from './i18n';
 import { useWidget } from './WidgetContext';
 import { c } from './concierge/copy';
 import { fetchStoreStatus, type StoreStatus } from './api/chat.api';
+import { startNewConversation } from '../connect';
 
 function initials(name: string) {
   return (
@@ -41,6 +42,12 @@ export function WidgetPanel({
 }) {
   const { bootstrap, config } = useWidget();
   const closeRef = useRef<HTMLButtonElement | null>(null);
+  // Bumping the session remounts the chat with empty state after "New conversation".
+  const [session, setSession] = useState(0);
+  const newConversation = () => {
+    startNewConversation();
+    setSession((n) => n + 1);
+  };
   const isOnline = useOnlineState(
     typeof navigator !== 'undefined' ? navigator.onLine : true,
   );
@@ -125,6 +132,15 @@ export function WidgetPanel({
           </div>
         </div>
         <button
+          className="amqur-iconbtn amq-new"
+          onClick={newConversation}
+          aria-label={c(lang, 'newChat')}
+          title={c(lang, 'newChat')}
+          type="button"
+        >
+          <span aria-hidden style={{ fontSize: 18, lineHeight: 1 }}>↺</span>
+        </button>
+        <button
           ref={closeRef}
           className="amqur-iconbtn amq-close"
           onClick={onClose}
@@ -147,7 +163,7 @@ export function WidgetPanel({
         }}
       >
         {chatEnabled ? (
-          <ChatView />
+          <ChatView key={session} />
         ) : (
           <div style={{ padding: 16, fontSize: 14 }}>
             Chat is not enabled for this location.
