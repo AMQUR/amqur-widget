@@ -156,3 +156,19 @@ export async function fetchStoreStatus(lang: string): Promise<StoreStatus> {
 
 export type DeptStatus = { open: boolean; closesAt: string | null; nextOpen: { date: string; at: string } | null } | null;
 export type StoreStatus = { known: boolean; simulated?: boolean; timezone?: string; summary?: string | null; sales?: DeptStatus; service?: DeptStatus; parts?: DeptStatus };
+
+export type Spotlight = { id: string; kind: string; title: string; body: string; linkUrl: string | null; disclaimer: string | null; label: string };
+
+/** Approved, in-window dealership spotlights for this store (public, read-only). */
+export async function fetchSpotlights(): Promise<Spotlight[]> {
+    const cfg = getWidgetConfig();
+    const base = normalizeApiBaseUrl(cfg.apiBaseUrl);
+    try {
+        const res = await fetch(`${base}/public/spotlights?tenantSlug=${encodeURIComponent(cfg.tenantSlug)}&locationSlug=${encodeURIComponent(cfg.locationSlug)}`);
+        if (!res.ok) return [];
+        const data = unwrapApiData<Spotlight[]>(await res.json());
+        return Array.isArray(data) ? data.slice(0, 3) : [];
+    } catch {
+        return [];
+    }
+}

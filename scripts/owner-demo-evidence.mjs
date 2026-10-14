@@ -19,8 +19,10 @@ const VIEWPORTS = [
   { name: '390', width: 390, height: 844, mobile: true },
   { name: '430', width: 430, height: 932, mobile: true },
   { name: 'tablet-768', width: 768, height: 1024, mobile: false },
+  { name: 'laptop-1024', width: 1024, height: 768, mobile: false },
   { name: 'desktop-1440', width: 1440, height: 900, mobile: false },
-];
+  { name: 'desktop-1920', width: 1920, height: 1080, mobile: false },
+].filter((v) => !process.env.VIEWPORTS || process.env.VIEWPORTS.split(',').includes(v.name));
 
 const SCRIPT = [
   ['01-greeting', 'Hi'],

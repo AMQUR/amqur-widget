@@ -572,3 +572,4 @@
 /* Card/disclaimer text inside a message must not inherit chat-bubble styling. */
 .amq-msg .amq-card p, .amq-msg p.amq-disclaimer { padding: 0; margin: 0; background: none; border: 0; border-radius: 0; box-shadow: none; font-size: 12px; line-height: 1.45; }
 .amq-msg p.amq-disclaimer { padding: 0 6px; font-size: 11.5px; }
+.amq-spotlight { border-left: 3px solid var(--amqur-primary); } .amq-storefront .amq-card p { margin: 0; }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Lang, PageContext } from './types';
 import { c } from './copy';
-import { fetchStoreStatus, type StoreStatus } from '../api/chat.api';
+import { fetchSpotlights, fetchStoreStatus, type Spotlight, type StoreStatus } from '../api/chat.api';
 
 /** Opening "storefront": verified open/closed status, departments, context-aware nudge. */
 export function Storefront(props: {
@@ -12,9 +12,11 @@ export function Storefront(props: {
     onPick: (action: 'sales' | 'service' | 'parts' | 'vdp') => void;
 }) {
     const [status, setStatus] = useState<StoreStatus>({ known: false });
+    const [spots, setSpots] = useState<Spotlight[]>([]);
     useEffect(() => {
         let alive = true;
         void fetchStoreStatus(props.lang).then((s) => alive && setStatus(s));
+        void fetchSpotlights().then((s) => alive && setSpots(s));
         return () => {
             alive = false;
         };
@@ -36,6 +38,19 @@ export function Storefront(props: {
                     {c(props.lang, 'welcomeVdp')}
                 </button>
             )}
+            {spots.map((sp) => (
+                <section key={sp.id} className="amq-card amq-spotlight" aria-label={sp.label}>
+                    <span className="amq-card__eyebrow">{sp.label}</span>
+                    <div className="amq-card__title">{sp.title}</div>
+                    <p className="amq-small">{sp.body}</p>
+                    {sp.linkUrl && (
+                        <a className="amq-linkbtn" href={sp.linkUrl} target="_blank" rel="noopener noreferrer">
+                            {props.lang === 'es' ? 'Más información' : 'Learn more'}
+                        </a>
+                    )}
+                    {sp.disclaimer && <p className="amq-muted amq-small">{sp.disclaimer}</p>}
+                </section>
+            ))}
             <div className="amq-depts" role="group" aria-label="Departments">
                 {props.departments.sales && (
                     <button type="button" className="amq-dept" onClick={() => props.onPick('sales')}>
