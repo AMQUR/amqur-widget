@@ -3,6 +3,8 @@ import { test, expect, type Page } from '@playwright/test';
 /**
  * Real browser journey against a locally running API (test stack + sanitized fixture tenant
  * "journey-motors" seeded by the backend journeys e2e suite). Never points at production.
+ * Start that API with NODE_ENV=test: with production-like rate limits (start:local-demo), five
+ * engines in parallel from one IP are correctly throttled (429) and the widget cannot boot.
  */
 const API = process.env.LOCAL_API_URL || 'http://127.0.0.1:3001';
 const TENANT = process.env.LOCAL_JOURNEY_TENANT || 'journey-motors';
@@ -164,5 +166,30 @@ test.describe('Concierge Canvas', () => {
         await input.press('Enter');
         await expect(page.locator('.amq-msg--ai').first()).toBeVisible({ timeout: 10_000 });
         expect(Date.now() - t0).toBeLessThan(2500);
+    });
+
+    test('API failure: honest error, nothing claimed, Retry resends and succeeds', async ({ page }, info) => {
+        test.skip(!['chromium', 'mobile-webkit'].includes(info.project.name), 'desktop + iPhone are enough');
+        let failNext = true;
+        await page.route('**/api/chat', async (route) => {
+            if (failNext && route.request().method() === 'POST') {
+                failNext = false;
+                await route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"upstream unavailable"}' });
+                return;
+            }
+            await route.continue();
+        });
+        const launcher = await boot(page);
+        await launcher.click();
+        const input = page.getByRole('textbox', { name: /ask about vehicles/i });
+        await input.fill('Do you have any Wranglers?');
+        await input.press('Enter');
+        const dialog = page.getByRole('dialog');
+        await expect(dialog.getByText(/couldn.t send that\. Nothing was saved/i)).toBeVisible({ timeout: 10_000 });
+        // No assistant content pretending the request went through
+        await expect(page.locator('.amq-vcard')).toHaveCount(0);
+        await dialog.getByRole('button', { name: /^retry$/i }).click();
+        await expect(page.locator('.amq-vcard').first()).toBeVisible({ timeout: 15_000 });
+        await expect(dialog.getByRole('button', { name: /^retry$/i })).toHaveCount(0);
     });
 });
