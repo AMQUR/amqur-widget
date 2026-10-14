@@ -5,6 +5,21 @@ export type AmqurWidgetConfig = {
     jwtToken?: string;
     /** Optional UI language override: en | es */
     locale?: string;
+    /**
+     * Optional explicit host-page context (e.g. from the dealer's VDP template):
+     * { pageType, vin, stockNumber, vehicleYear, vehicleMake, vehicleModel, vehicleTrim, campaign, department }
+     */
+    pageContext?: {
+        pageType?: 'homepage' | 'inventory_search' | 'vdp' | 'specials' | 'finance' | 'service' | 'service_scheduler' | 'parts' | 'contact' | 'other';
+        vin?: string;
+        stockNumber?: string;
+        vehicleYear?: number;
+        vehicleMake?: string;
+        vehicleModel?: string;
+        vehicleTrim?: string;
+        campaign?: string;
+        department?: 'sales' | 'service' | 'parts';
+    };
 };
 
 export type WidgetFeatures = {

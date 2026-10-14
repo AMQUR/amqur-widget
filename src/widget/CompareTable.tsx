@@ -1,78 +1,68 @@
-import type { CSSProperties } from 'react';
+import type { Vehicle } from './concierge/types';
 
-type CompareVehicle = {
-  vin: string;
-  year?: number | null;
-  make?: string | null;
-  model?: string | null;
-  trim?: string | null;
-  mileage?: number | null;
-  price?: number | null;
-  drivetrain?: string | null;
-  photos?: string[];
-};
+type Row = { label: string; value: (v: Vehicle) => string };
 
-const cell: CSSProperties = {
-  fontSize: '12px',
-  padding: '6px 4px',
-  borderBottom: '1px solid rgba(0,0,0,0.06)',
-};
-
-export function CompareTable({ vehicles }: { vehicles: CompareVehicle[] }) {
-  const cols = vehicles.slice(0, 4);
-  if (cols.length < 2) return null;
-
-  const rows: Array<{ label: string; value: (v: CompareVehicle) => string }> = [
-    {
-      label: 'Vehicle',
-      value: (v) => [v.year, v.make, v.model].filter(Boolean).join(' '),
-    },
+const ROWS: Row[] = [
+    { label: 'Price', value: (v) => (v.price != null ? `$${v.price.toLocaleString('en-US')}` : '—') },
+    { label: 'Est. payment', value: (v) => (v.estimatedPayment != null ? `$${Math.round(v.estimatedPayment).toLocaleString('en-US')}/mo` : '—') },
     { label: 'Trim', value: (v) => v.trim ?? '—' },
-    {
-      label: 'Price',
-      value: (v) =>
-        v.price != null ? `$${v.price.toLocaleString()}` : 'Ask dealership',
-    },
-    {
-      label: 'Mileage',
-      value: (v) =>
-        v.mileage != null ? v.mileage.toLocaleString() : '—',
-    },
+    { label: 'Miles', value: (v) => (v.mileage != null ? v.mileage.toLocaleString('en-US') : '—') },
     { label: 'Drivetrain', value: (v) => v.drivetrain ?? '—' },
-    { label: 'VIN', value: (v) => v.vin },
-  ];
+    { label: 'Fuel', value: (v) => v.fuelType ?? '—' },
+    { label: 'Color', value: (v) => v.color ?? '—' },
+    { label: 'Condition', value: (v) => v.condition ?? '—' },
+];
 
-  return (
-    <div
-      role="table"
-      aria-label="Vehicle comparison"
-      style={{
-        overflowX: 'auto',
-        border: '1px solid rgba(0,0,0,0.08)',
-        borderRadius: '12px',
-        background: 'rgba(255,255,255,0.9)',
-        padding: '8px',
-      }}
-    >
-      <div style={{ fontSize: '11px', opacity: 0.7, marginBottom: 6 }}>
-        Comparison uses verified inventory fields only.
-      </div>
-      {rows.map((row) => (
-        <div
-          key={row.label}
-          role="row"
-          style={{ display: 'grid', gridTemplateColumns: `90px repeat(${cols.length}, minmax(100px, 1fr))` }}
-        >
-          <div role="rowheader" style={{ ...cell, fontWeight: 600 }}>
-            {row.label}
-          </div>
-          {cols.map((v) => (
-            <div key={v.vin + row.label} role="cell" style={cell}>
-              {row.value(v)}
-            </div>
-          ))}
+/**
+ * Up to three vehicles. Rows where vehicles differ are emphasized; identical rows collapse
+ * to the bottom. Missing data shows "—" — never inferred.
+ */
+export function CompareTable({ vehicles }: { vehicles: Vehicle[] }) {
+    const cols = vehicles.slice(0, 3);
+    if (cols.length < 2) return null;
+    const rows = ROWS.map((r) => {
+        const vals = cols.map(r.value);
+        const known = vals.filter((x) => x !== '—');
+        return { ...r, vals, differs: new Set(known).size > 1 };
+    }).sort((a, b) => Number(b.differs) - Number(a.differs));
+    const allFeatures = [...new Set(cols.flatMap((v) => v.features ?? []))].slice(0, 12);
+    return (
+        <div className="amq-compare" role="region" aria-label="Vehicle comparison">
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col"><span className="amq-sr">Attribute</span></th>
+                        {cols.map((v) => (
+                            <th key={v.vin} scope="col">
+                                {[v.year, v.make, v.model].filter(Boolean).join(' ')}
+                            </th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows.map((r) => (
+                        <tr key={r.label} className={r.differs ? 'amq-compare__diff' : undefined}>
+                            <th scope="row">{r.label}</th>
+                            {r.vals.map((val, i) => (
+                                <td key={cols[i].vin}>{val}</td>
+                            ))}
+                        </tr>
+                    ))}
+                    {allFeatures.map((f) => {
+                        const has = cols.map((v) => (v.features?.length ? (v.features.some((x) => x.toLowerCase() === f.toLowerCase()) ? '✓' : '—') : '?'));
+                        return (
+                            <tr key={f} className={new Set(has).size > 1 ? 'amq-compare__diff' : undefined}>
+                                <th scope="row">{f}</th>
+                                {has.map((h, i) => (
+                                    <td key={cols[i].vin} aria-label={h === '✓' ? 'listed' : h === '?' ? 'not in listing data' : 'not listed'}>
+                                        {h}
+                                    </td>
+                                ))}
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
         </div>
-      ))}
-    </div>
-  );
+    );
 }

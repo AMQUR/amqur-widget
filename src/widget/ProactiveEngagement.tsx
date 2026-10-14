@@ -1,69 +1,60 @@
 import { useEffect, useState } from 'react';
 import { useWidget } from './WidgetContext';
-import { t, type Locale } from './i18n';
+import { c } from './concierge/copy';
+import type { Lang, PageContext } from './concierge/types';
+import type { SendOptions } from './concierge/useConcierge';
+
+const DISMISS_KEY = 'amqur_proactive_dismissed_v2';
 
 /**
- * Non-intrusive proactive prompt. Feature-flagged; frequency-capped; dismissible.
- * Does not use dark patterns.
+ * Contextual, frequency-capped nudge (VDP dwell / service page). Never shown again after a
+ * dismissal (persisted), never over an active conversation, never on generic pages, and it
+ * does not obstruct content (inline above the composer). No fake urgency.
  */
-export function ProactiveEngagement({
-  locale,
-}: {
-  locale: Locale;
-}) {
-  const { bootstrap } = useWidget();
-  const [visible, setVisible] = useState(false);
-  const [shown, setShown] = useState(0);
+export function ProactiveEngagement(props: { lang: Lang; pageContext: PageContext; hasConversation: boolean; onAccept: (opts: SendOptions) => void }) {
+    const { bootstrap } = useWidget();
+    const [visible, setVisible] = useState(false);
+    const enabled = bootstrap.proactive?.enabled === true || bootstrap.features?.proactiveEngagement === true;
+    const kind = props.pageContext.pageType === 'vdp' && props.pageContext.vin ? 'vdp' : props.pageContext.pageType === 'service' || props.pageContext.pageType === 'service_scheduler' ? 'service' : null;
 
-  useEffect(() => {
-    if (!bootstrap.proactive?.enabled && !bootstrap.features?.proactiveEngagement) {
-      return;
-    }
-    const max = bootstrap.proactive?.maxPerSession ?? 2;
-    const timer = window.setTimeout(() => {
-      if (shown >= max) return;
-      setVisible(true);
-      setShown((n) => n + 1);
-    }, 12_000);
-    return () => window.clearTimeout(timer);
-  }, [bootstrap, shown]);
+    useEffect(() => {
+        if (!enabled || !kind || props.hasConversation) return;
+        try {
+            if (sessionStorage.getItem(DISMISS_KEY) || localStorage.getItem(DISMISS_KEY)) return;
+        } catch {
+            /* storage blocked → still allow once per page view */
+        }
+        const timer = window.setTimeout(() => setVisible(true), kind === 'vdp' ? 20_000 : 12_000);
+        return () => window.clearTimeout(timer);
+    }, [enabled, kind, props.hasConversation]);
 
-  if (!visible) return null;
-
-  return (
-    <div
-      role="dialog"
-      aria-label="Suggested help"
-      style={{
-        position: 'absolute',
-        left: 12,
-        right: 12,
-        bottom: 72,
-        padding: '12px 14px',
-        borderRadius: 12,
-        background: 'rgba(255,255,255,0.96)',
-        border: '1px solid rgba(0,0,0,0.1)',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-        zIndex: 5,
-        fontSize: 13,
-      }}
-    >
-      <div>{t(locale, 'proactiveVdp')}</div>
-      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-        <button
-          type="button"
-          onClick={() => setVisible(false)}
-          style={{
-            border: '1px solid rgba(0,0,0,0.12)',
-            background: 'transparent',
-            borderRadius: 8,
-            padding: '6px 10px',
-            cursor: 'pointer',
-          }}
-        >
-          {t(locale, 'dismiss')}
-        </button>
-      </div>
-    </div>
-  );
+    if (!visible || props.hasConversation || !kind) return null;
+    const dismiss = () => {
+        setVisible(false);
+        try {
+            localStorage.setItem(DISMISS_KEY, String(Date.now()));
+        } catch {
+            /* ignore */
+        }
+    };
+    return (
+        <div className="amq-nudge" role="complementary" aria-label="Suggestion">
+            <p>{kind === 'vdp' ? c(props.lang, 'welcomeVdp') : c(props.lang, 'welcomeService')}</p>
+            <div className="amq-actions">
+                <button
+                    type="button"
+                    className="amq-btn amq-btn--primary"
+                    onClick={() => {
+                        setVisible(false);
+                        props.onAccept(kind === 'vdp' ? { action: 'vehicle_detail', vin: props.pageContext.vin, display: c(props.lang, 'welcomeVdp') } : { action: 'service', display: c(props.lang, 'service') });
+                    }}
+                >
+                    {kind === 'vdp' ? c(props.lang, 'details') : c(props.lang, 'service')}
+                </button>
+                <button type="button" className="amq-btn amq-btn--ghost" onClick={dismiss}>
+                    {c(props.lang, 'close')}
+                </button>
+            </div>
+        </div>
+    );
 }

@@ -33,7 +33,7 @@ export function WidgetShell() {
   }, [primary, accent]);
 
   return (
-    <div className="amqur-portal" ref={portalRef}>
+    <div className="amqur-portal" ref={portalRef} data-open={open ? "true" : "false"}>
       <LauncherButton open={open} onToggle={toggle} />
       <WidgetPanel open={open} onClose={close} />
     </div>
