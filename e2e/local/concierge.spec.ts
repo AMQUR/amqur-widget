@@ -47,7 +47,7 @@ async function boot(page: Page, opts: { aggressiveHostCss?: boolean } = {}) {
 
 test.describe('Concierge Canvas', () => {
     test('sales journey: search → feature filter → payment → appointment, with journey tray', async ({ page }, info) => {
-        test.skip(info.project.name !== 'chromium' && info.project.name !== 'mobile-chrome', 'journey runs on chromium + mobile chrome');
+        // Runs on every engine (incl. iPhone Safari); only the pixel snapshot is Chromium-only.
         const launcher = await boot(page);
         await launcher.click();
         const dialog = page.getByRole('dialog');
@@ -137,7 +137,8 @@ test.describe('Concierge Canvas', () => {
     });
 
     test('host CSS cannot break the widget (Shadow DOM isolation)', async ({ page }, info) => {
-        test.skip(info.project.name !== 'chromium', 'single engine is enough');
+        // Chromium + both WebKit projects (Safari handles Shadow DOM styling differently).
+        test.skip(!['chromium', 'webkit', 'mobile-webkit'].includes(info.project.name), 'Chromium + WebKit cover the engines');
         const launcher = await boot(page, { aggressiveHostCss: true });
         const lb = await launcher.boundingBox();
         expect(lb!.width).toBeGreaterThan(40);
