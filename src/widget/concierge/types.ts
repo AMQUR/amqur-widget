@@ -65,15 +65,15 @@ export type Card =
     | { kind: 'parts'; id: string; status: string; fitmentVerified: boolean; priceVerified: boolean; availabilityVerified: boolean; etaVerified: boolean; needsVin: boolean }
     | { kind: 'handoff'; state: 'requested' | 'queued' | 'notified' | 'recorded'; escalationId: string }
     | { kind: 'hours'; summary: string; openNow: boolean | null; timezone: string }
-    | { kind: 'payment'; vin: string; monthly: number; apr: number; aprSource: PaymentAssumptions['aprSource']; termMonths: number; downPayment: number; tradeEquity: number; price: number; includesTaxAndFees: boolean; disclaimer: string; policyVersion: string };
+    | { kind: 'payment'; vin: string; vehicleLabel?: string; product?: 'finance'; status?: 'estimate'; monthly: number; apr: number; aprSource: PaymentAssumptions['aprSource']; termMonths: number; downPayment: number; tradeEquity: number; price: number; includesTaxAndFees: boolean; disclaimer: string; policyVersion: string };
 
 export type Journey = {
     selectedVehicle?: { vin: string; label: string } | null;
-    payment?: { monthly: number; termMonths: number; downPayment: number; aprSource: string } | null;
+    payment?: { vin?: string; monthly: number; termMonths: number; downPayment: number; aprSource: string; product?: 'finance'; status?: 'estimate'; includesTaxAndFees?: boolean } | null;
     trade?: { summary: string; requestId?: string } | null;
     appointment?: { id: string; label: string; status: string } | null;
     creditApplication?: { state: string } | null;
-    otdQuote?: { status: string; total: number | null } | null;
+    otdQuote?: { status: string; total: number | null; vin?: string } | null;
     service?: { need?: string; vehicle?: string } | null;
     parts?: { need?: string; status?: string } | null;
     handoff?: { state: string } | null;

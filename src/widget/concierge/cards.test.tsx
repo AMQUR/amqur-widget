@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CardView } from './Cards';
+import { JourneyTray } from './JourneyTray';
 import { VehicleCard, VehicleCarousel } from './VehicleCard';
-import type { Card, Vehicle } from './types';
+import type { Card, Journey, Vehicle } from './types';
 
 const render = (card: Card) => renderToStaticMarkup(<CardView card={card} lang="en" apiBaseUrl="http://localhost:3001" />);
 
@@ -89,6 +90,9 @@ describe('payment card', () => {
             policyVersion: 'v1',
         });
         expect(html).toContain('$732');
+        expect(html).toContain('Finance estimate');
+        expect(html).toContain('VIN V');
+        expect(html).toContain('not a lease payment');
         expect(html.match(/not a financing offer/gi)?.length).toBe(1);
         expect(html).toContain('aria-expanded="false"');
         expect(html).not.toContain('long legal text'); // inside collapsed details
@@ -145,5 +149,20 @@ describe('trade card', () => {
         const html = render({ kind: 'trade', id: 't', summary: 'x', appraisalVerified: true, value: { kind: 'MARKET_ESTIMATE', amount: null, low: 18000, high: 21000, expiresAt: null } });
         expect(html).toContain('Estimate — not an offer');
         expect(html).toContain('$18,000–$21,000');
+    });
+});
+
+describe('journey tray', () => {
+    it('hides a payment that belongs to a different vehicle and keeps the trade', () => {
+        const journey: Journey = {
+            selectedVehicle: { vin: 'COMPASSVIN123456', label: '2025 Jeep Compass' },
+            payment: { vin: 'GRANDCHERVIN1234', monthly: 785, termMonths: 72, downPayment: 0, aprSource: 'ILLUSTRATIVE', product: 'finance', status: 'estimate' },
+            trade: { summary: 'Ferrari 458' },
+        };
+        const html = renderToStaticMarkup(<JourneyTray journey={journey} lang="en" />);
+        expect(html).toContain('2025 Jeep Compass');
+        expect(html).toContain('Ferrari 458');
+        expect(html).not.toContain('$785');
+        expect(html).not.toContain('Finance estimate');
     });
 });

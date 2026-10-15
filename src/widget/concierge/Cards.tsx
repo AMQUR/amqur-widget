@@ -110,11 +110,13 @@ export function CardView({ card, lang, apiBaseUrl }: { card: Card; lang: Lang; a
         }
         case 'payment':
             return (
-                <section className="amq-card amq-card--payment" aria-label={c(lang, 'estimateTitle')}>
+                <section className="amq-card amq-card--payment" aria-label={c(lang, 'financeEstimate')}>
                     <header>
-                        <span className="amq-card__eyebrow">{c(lang, 'estimateTitle')}</span>
+                        <span className="amq-card__eyebrow">{c(lang, 'financeEstimate')}</span>
                         <span className="amq-chip">{card.aprSource === 'CUSTOMER' ? c(lang, 'yourRate', { apr: card.apr }) : c(lang, 'exampleRate', { apr: card.apr })}</span>
                     </header>
+                    {card.vehicleLabel && <div className="amq-card__title">{card.vehicleLabel}</div>}
+                    <p className="amq-muted amq-small">VIN {card.vin}</p>
                     <div className="amq-card__big">
                         {money(card.monthly, lang)}
                         <span className="amq-muted">/mo</span>
@@ -123,6 +125,7 @@ export function CardView({ card, lang, apiBaseUrl }: { card: Card; lang: Lang; a
                     <p className="amq-muted amq-small">
                         {c(lang, 'estimateShort')} {card.includesTaxAndFees ? c(lang, 'inclTaxes') : c(lang, 'exclTaxes')}.
                     </p>
+                    <p className="amq-muted amq-small">{c(lang, 'notALease')}</p>
                     <Details label={c(lang, 'paymentTerms')}>
                         <dl className="amq-dl">
                             <dt>{c(lang, 'vehiclePrice')}</dt>

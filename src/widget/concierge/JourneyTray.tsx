@@ -5,7 +5,16 @@ import { c, money } from './copy';
 export function JourneyTray({ journey, lang }: { journey: Journey; lang: Lang }) {
     const items: Array<{ k: string; label: string; value: string }> = [];
     if (journey.selectedVehicle) items.push({ k: 'v', label: c(lang, 'vehicle'), value: journey.selectedVehicle.label });
-    if (journey.payment) items.push({ k: 'p', label: c(lang, 'estimate'), value: `${money(journey.payment.monthly, lang)}/mo` });
+    const paymentMatches =
+        !journey.payment?.vin || !journey.selectedVehicle || journey.payment.vin === journey.selectedVehicle.vin;
+    if (journey.payment && paymentMatches) {
+        const vinTail = journey.payment.vin ? ` · ${journey.payment.vin.slice(-6)}` : '';
+        items.push({
+            k: 'p',
+            label: c(lang, 'financeEstimate'),
+            value: `${money(journey.payment.monthly, lang)}/mo${vinTail}`,
+        });
+    }
     if (journey.trade) items.push({ k: 't', label: c(lang, 'trade'), value: journey.trade.summary });
     if (journey.appointment) items.push({ k: 'a', label: c(lang, 'appointment'), value: `${journey.appointment.label} · ${journey.appointment.status === 'CONFIRMED' ? c(lang, 'confirmed') : c(lang, 'requested')}` });
     if (journey.otdQuote) items.push({ k: 'o', label: c(lang, 'otd'), value: journey.otdQuote.total != null ? money(journey.otdQuote.total, lang) : c(lang, 'otdReq') });
