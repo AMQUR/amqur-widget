@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:staging": "playwright test",
     "test:local": "playwright test",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "dev:demo": "vite --mode demo --port 5173 --strictPort"
   },
   "dependencies": {
     "react": "^19.2.0",

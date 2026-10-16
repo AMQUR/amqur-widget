@@ -5,7 +5,10 @@ export default defineConfig({
   plugins: [react()],
 
   define: {
-    "process.env": {}, // <-- fixes "process is not defined"
+    // Library builds don't replace NODE_ENV automatically. Without this React ships its
+    // development build (~3x larger, slower) inside the dealer-site embed.
+    "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV === "development" ? "development" : "production"),
+    "process.env": "{}",
   },
 
   server: {
@@ -32,5 +35,10 @@ export default defineConfig({
       fileName: "assistant-widget",
       formats: ["iife"],
     },
+    target: "es2019",
+    minify: "esbuild",
+    cssMinify: true,
+    sourcemap: false,
+    reportCompressedSize: true,
   },
 });

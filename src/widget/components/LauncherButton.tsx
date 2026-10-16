@@ -1,5 +1,5 @@
 import { useWidget } from '../WidgetContext';
-import { EnvoyMark } from '../icons';
+import { ChatIcon, CloseIcon } from '../icons';
 
 export function LauncherButton(props: { open: boolean; onToggle: () => void }) {
     const { bootstrap } = useWidget();
@@ -24,8 +24,10 @@ export function LauncherButton(props: { open: boolean; onToggle: () => void }) {
                         borderRadius: '50%',
                     }}
                 />
+            ) : props.open ? (
+                <CloseIcon />
             ) : (
-                <EnvoyMark />
+                <ChatIcon />
             )}
         </button>
     );
