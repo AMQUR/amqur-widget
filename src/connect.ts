@@ -15,7 +15,7 @@ function safeSlugPart(s: string): string {
 }
 
 function conversationStorageKey(tenantSlug: string, locationSlug: string): string {
-    return `amqur_conversation_v1_${safeSlugPart(tenantSlug)}_${safeSlugPart(locationSlug)}`;
+    return `amqur_conversation_v2_${safeSlugPart(tenantSlug)}_${safeSlugPart(locationSlug)}`;
 }
 
 /** Ensures requests hit a single `/api` prefix (Nest global prefix). Avoids `/api/api`. */
@@ -32,16 +32,62 @@ function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function getOrCreateConversationId(tenantSlug: string, locationSlug: string): string {
-    const key = conversationStorageKey(tenantSlug, locationSlug);
+/**
+ * Conversation ids are SERVER-ISSUED (signed, tenant-bound `cv1.*`). The widget only stores
+ * what the API returned; legacy client-generated ids are discarded so a visitor can never
+ * address someone else's conversation.
+ */
+const ID_RE = /^cv1\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{22}$/;
+/** A returning visitor resumes within this idle window; after it, a fresh conversation starts. */
+export const RESUME_IDLE_MS = 12 * 60 * 60 * 1000;
+
+function loadConversationId(tenantSlug: string, locationSlug: string): string | null {
     try {
-        const existing = localStorage.getItem(key);
-        if (existing) return existing;
-        const id = crypto.randomUUID();
-        localStorage.setItem(key, id);
-        return id;
+        const raw = localStorage.getItem(conversationStorageKey(tenantSlug, locationSlug));
+        if (!raw) return null;
+        // Stored as {id, at}; older builds stored the bare id (no timestamp → not resumed).
+        const v = raw.startsWith('{') ? (JSON.parse(raw) as { id?: string; at?: number }) : null;
+        if (!v?.id || !ID_RE.test(v.id) || typeof v.at !== 'number') return null;
+        if (Date.now() - v.at > RESUME_IDLE_MS) {
+            localStorage.removeItem(conversationStorageKey(tenantSlug, locationSlug));
+            return null;
+        }
+        return v.id;
     } catch {
-        return crypto.randomUUID();
+        return null;
+    }
+}
+
+export function setConversationId(id: string): void {
+    if (!ID_RE.test(id)) return;
+    conversationId = id;
+    const cfg = widgetConfig;
+    if (!cfg) return;
+    try {
+        localStorage.setItem(
+            conversationStorageKey(cfg.tenantSlug, cfg.locationSlug),
+            JSON.stringify({ id, at: Date.now() }),
+        );
+    } catch {
+        /* storage may be blocked — keep in memory for this page */
+    }
+}
+
+/**
+ * "New conversation": forget this browser's conversation for this store (id + on-screen
+ * transcript). The next message gets a fresh server-issued id and empty journey state. Nothing
+ * is deleted on the server and no other conversation is touched.
+ */
+export function startNewConversation(): void {
+    const cfg = widgetConfig;
+    const old = conversationId;
+    conversationId = null;
+    if (!cfg) return;
+    try {
+        localStorage.removeItem(conversationStorageKey(cfg.tenantSlug, cfg.locationSlug));
+        if (old) sessionStorage.removeItem(`amqur_transcript_${cfg.tenantSlug}_${cfg.locationSlug}_${old}`);
+    } catch {
+        /* storage blocked — memory already cleared */
     }
 }
 
@@ -265,7 +311,7 @@ export async function initConnection(config: AmqurWidgetConfig) {
 
         log("JWT ready");
 
-        conversationId = getOrCreateConversationId(tenantSlug, locationSlug);
+        conversationId = loadConversationId(tenantSlug, locationSlug);
 
         log("Session ready");
     } catch (e) {
@@ -284,7 +330,7 @@ export function getWidgetBootstrap(): WidgetBootstrapResult {
     return widgetBootstrap;
 }
 
-export function getConversationId(): string {
-    if (!conversationId) throw new Error("Conversation not initialized");
+/** null until the API issues an id on the first turn. */
+export function getConversationId(): string | null {
     return conversationId;
 }

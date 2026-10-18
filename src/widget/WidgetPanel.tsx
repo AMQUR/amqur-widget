@@ -3,6 +3,20 @@ import { ChatView } from './ChatView';
 import { CloseIcon } from './icons';
 import { detectLocale, t, type Locale } from './i18n';
 import { useWidget } from './WidgetContext';
+import { c } from './concierge/copy';
+import { fetchStoreStatus, type StoreStatus } from './api/chat.api';
+import { startNewConversation } from '../connect';
+
+function initials(name: string) {
+  return (
+    name
+      .split(/\s+/)
+      .filter((w) => /^[A-Za-z]/.test(w))
+      .slice(0, 2)
+      .map((w) => w[0]!.toUpperCase())
+      .join('') || 'AI'
+  );
+}
 
 function useOnlineState(initial: boolean) {
   const [isOnline, setIsOnline] = useState(initial);
@@ -28,6 +42,12 @@ export function WidgetPanel({
 }) {
   const { bootstrap, config } = useWidget();
   const closeRef = useRef<HTMLButtonElement | null>(null);
+  // Bumping the session remounts the chat with empty state after "New conversation".
+  const [session, setSession] = useState(0);
+  const newConversation = () => {
+    startNewConversation();
+    setSession((n) => n + 1);
+  };
   const isOnline = useOnlineState(
     typeof navigator !== 'undefined' ? navigator.onLine : true,
   );
@@ -36,7 +56,6 @@ export function WidgetPanel({
   );
 
   const { branding, location, features } = bootstrap;
-  const primaryColor = branding?.primaryColor || '#111111';
   const logoUrl = branding?.logoUrl;
   const locationName = location?.name || 'Dealership Assistant';
   const headerTitle =
@@ -47,6 +66,21 @@ export function WidgetPanel({
     (typeof branding?.logoAlt === 'string' && branding.logoAlt.trim()) ||
     `${locationName} logo`;
   const chatEnabled = features?.chat === true;
+  const lang = locale === 'es' ? 'es' : 'en';
+  const [store, setStore] = useState<StoreStatus>({ known: false });
+  useEffect(() => {
+    if (!open) return;
+    let alive = true;
+    void fetchStoreStatus(lang).then((st) => alive && setStore(st));
+    return () => {
+      alive = false;
+    };
+  }, [open, lang]);
+  // Staff availability comes from verified (or clearly labeled demo) hours — never implied by "online".
+  const sales = store.known ? store.sales : null;
+  const team = sales
+    ? `${sales.open && sales.closesAt ? c(lang, 'teamOpen', { t: sales.closesAt }) : sales.nextOpen ? c(lang, 'teamClosed', { t: sales.nextOpen.at }) : ''}${store.simulated ? ` (${c(lang, 'demoHours')})` : ''}`
+    : null;
 
   const disclaimerText =
     typeof branding?.disclaimerText === 'string'
@@ -76,79 +110,46 @@ export function WidgetPanel({
       role="dialog"
       aria-modal="true"
       aria-label={`${locationName} assistant`}
-      style={{ position: 'relative', display: 'flex', flexDirection: 'column' }}
+      style={{ display: 'flex', flexDirection: 'column' }}
     >
-      <div
-        className="amqur-header"
-        style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '0 12px' }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+      <header className="amqur-header amq-header">
+        <div className="amq-header__brand">
           {logoUrl ? (
-            <img
-              src={logoUrl}
-              alt={logoAlt}
-              style={{ height: '24px', width: 'auto', borderRadius: '4px' }}
-            />
+            <img src={logoUrl} alt={logoAlt} className="amq-header__logo" />
           ) : (
-            <div
-              style={{
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                background: primaryColor,
-                flexShrink: 0,
-              }}
-              aria-hidden
-            />
+            <div className="amq-avatar" aria-hidden>
+              {initials(headerTitle)}
+            </div>
           )}
-          <span
-            style={{
-              fontSize: '14px',
-              fontWeight: 620,
-              color: 'var(--amqur-text, #141414)',
-              letterSpacing: '-0.01em',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {headerTitle}
-          </span>
+          <div className="amq-header__text">
+            <span className="amq-header__title">{headerTitle}</span>
+            <span className="amq-header__status" aria-live="polite">
+              <span className={`amq-dot${isOnline ? ' amq-dot--on' : ''}`} aria-hidden />
+              {/* "Connected" = the AI assistant is reachable — NOT that a person is present. */}
+              {isOnline ? `${c(lang, 'aiAssistant')} · ${c(lang, 'connected')}` : c(lang, 'reconnecting')}
+            </span>
+            {team && <span className="amq-header__team">{team}</span>}
+          </div>
         </div>
-
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '5px',
-            marginRight: '6px',
-          }}
-          aria-live="polite"
+        <button
+          className="amqur-iconbtn amq-new"
+          onClick={newConversation}
+          aria-label={c(lang, 'newChat')}
+          title={c(lang, 'newChat')}
+          type="button"
         >
-          <div
-            style={{
-              width: '7px',
-              height: '7px',
-              borderRadius: '50%',
-              background: isOnline ? '#22c55e' : '#a3a3a3',
-            }}
-            aria-hidden
-          />
-          <span style={{ fontSize: '12px', opacity: 0.55 }}>
-            {isOnline ? 'Online' : 'Offline'}
-          </span>
-        </div>
-
+          <span aria-hidden style={{ fontSize: 18, lineHeight: 1 }}>↺</span>
+        </button>
         <button
           ref={closeRef}
-          className="amqur-iconbtn"
+          className="amqur-iconbtn amq-close"
           onClick={onClose}
           aria-label="Close chat"
           type="button"
         >
           <CloseIcon />
         </button>
-      </div>
+      </header>
 
       <div
         className="amqur-body"
@@ -162,7 +163,7 @@ export function WidgetPanel({
         }}
       >
         {chatEnabled ? (
-          <ChatView />
+          <ChatView key={session} />
         ) : (
           <div style={{ padding: 16, fontSize: 14 }}>
             Chat is not enabled for this location.
