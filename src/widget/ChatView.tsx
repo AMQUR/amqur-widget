@@ -23,6 +23,12 @@ function initialLang(cfgLocale?: string, locales?: string[]): Lang {
     return 'en';
 }
 
+function autosize(el: HTMLTextAreaElement | null) {
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+}
+
 export function ChatView() {
     const { bootstrap, config } = useWidget();
     const f = bootstrap.features ?? ({} as typeof bootstrap.features);
@@ -78,6 +84,7 @@ export function ChatView() {
         if (!input.trim() || !online || conv.busy) return;
         void conv.send(input);
         setInput('');
+        requestAnimationFrame(() => autosize(inputRef.current));
         inputRef.current?.focus();
     };
 
@@ -92,7 +99,15 @@ export function ChatView() {
     return (
         <div className="amq-chat">
             <JourneyTray journey={conv.journey} lang={lang} />
-            <div ref={logRef} className="amq-log" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Conversation">
+            <div
+                ref={logRef}
+                className="amq-log"
+                role="log"
+                aria-live="polite"
+                aria-relevant="additions text"
+                aria-label={c(lang, 'conversation')}
+                aria-busy={conv.busy || undefined}
+            >
                 {showStorefront && (
                     <Storefront
                         lang={lang}
@@ -119,7 +134,7 @@ export function ChatView() {
                             {m.author === 'staff' && <span className="amq-msg__who">{m.displayName ?? c(lang, 'staff')}</span>}
                             {m.text && <p>{m.text}</p>}
                             {m.vehicles && m.vehicles.length > 0 && (m.compare ? (
-                                <CompareTable vehicles={m.vehicles} />
+                                <CompareTable vehicles={m.vehicles} lang={lang} />
                             ) : (
                                 <VehicleCarousel count={m.vehicles.length} lang={lang}>
                                     {m.vehicles.map((v) => (
@@ -158,6 +173,7 @@ export function ChatView() {
                         <span aria-hidden />
                         <span aria-hidden />
                         <span aria-hidden />
+                        <span className="amq-typing__label" aria-hidden>{c(lang, 'typingAi')}</span>
                     </div>
                 )}
                 {conv.aiPaused && (
@@ -189,6 +205,22 @@ export function ChatView() {
                 </div>
             )}
 
+            {conv.quickReplies.length > 0 && !conv.busy && (
+                <div className="amq-quick" role="group" aria-label={c(lang, 'suggestion')}>
+                    {conv.quickReplies.map((q) => (
+                        <button
+                            key={q}
+                            type="button"
+                            className="amq-chip amq-chip--quick"
+                            disabled={!online}
+                            onClick={() => void conv.send(q)}
+                        >
+                            {q}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             <form className="amq-composer" onSubmit={submit}>
                 {multilingual && (
                     <button
@@ -211,7 +243,10 @@ export function ChatView() {
                     value={input}
                     maxLength={2000}
                     placeholder={c(lang, 'placeholder')}
-                    onChange={(e) => setInput(e.target.value)}
+                    onChange={(e) => {
+                        setInput(e.target.value);
+                        autosize(e.target);
+                    }}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();

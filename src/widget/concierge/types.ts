@@ -92,6 +92,8 @@ export type ChatResponse = {
     conversation: { language: Lang; handoffState: string; aiPaused: boolean; pending: string };
     delivery: { urgent: boolean; toolCount: number; minTypingMs: number; maxTypingMs: number };
     conversationId?: string;
+    /** True when the server minted a fresh id for this turn (widget should replace any prior id). */
+    conversationIdIssued?: boolean;
 };
 
 export type PageContext = {

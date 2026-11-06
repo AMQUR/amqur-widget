@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { ChatView } from './ChatView';
-import { CloseIcon } from './icons';
-import { detectLocale, t, type Locale } from './i18n';
+import { CloseIcon, NewChatIcon } from './icons';
+import { t, type Locale } from './i18n';
 import { useWidget } from './WidgetContext';
 import { c } from './concierge/copy';
 import { fetchStoreStatus, type StoreStatus } from './api/chat.api';
-import { startNewConversation } from '../connect';
+import { getConversationId, startNewConversation } from '../connect';
+import { clearCompareVins } from './compareVehicles';
+import type { Lang } from './concierge/types';
 
 function initials(name: string) {
   return (
@@ -36,24 +39,22 @@ function useOnlineState(initial: boolean) {
 export function WidgetPanel({
   open,
   onClose,
+  lang,
 }: {
   open: boolean;
   onClose: () => void;
+  lang: Lang;
 }) {
   const { bootstrap, config } = useWidget();
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
   // Bumping the session remounts the chat with empty state after "New conversation".
   const [session, setSession] = useState(0);
-  const newConversation = () => {
-    startNewConversation();
-    setSession((n) => n + 1);
-  };
+  const [confirmNew, setConfirmNew] = useState(false);
   const isOnline = useOnlineState(
     typeof navigator !== 'undefined' ? navigator.onLine : true,
   );
-  const [locale] = useState<Locale>(() =>
-    detectLocale(config.locale ?? bootstrap.locales?.[0]),
-  );
+  const locale: Locale = lang;
 
   const { branding, location, features } = bootstrap;
   const logoUrl = branding?.logoUrl;
@@ -66,7 +67,6 @@ export function WidgetPanel({
     (typeof branding?.logoAlt === 'string' && branding.logoAlt.trim()) ||
     `${locationName} logo`;
   const chatEnabled = features?.chat === true;
-  const lang = locale === 'es' ? 'es' : 'en';
   const [store, setStore] = useState<StoreStatus>({ known: false });
   useEffect(() => {
     if (!open) return;
@@ -96,21 +96,51 @@ export function WidgetPanel({
   const showFooter =
     disclaimerText || consentText || privacyUrl || termsUrl;
 
-  useEffect(() => {
-    if (open) {
-      closeRef.current?.focus();
+  const commitNewConversation = () => {
+    startNewConversation();
+    clearCompareVins(config.tenantSlug, config.locationSlug);
+    setConfirmNew(false);
+    setSession((n) => n + 1);
+  };
+  const requestNewConversation = () => {
+    // Empty / never-started sessions skip the confirm; otherwise ask once.
+    if (!getConversationId()) {
+      commitNewConversation();
+      return;
     }
-  }, [open]);
+    setConfirmNew(true);
+  };
 
-  if (!open) return null;
+  useEffect(() => {
+    closeRef.current?.focus();
+  }, []);
+
+  // Simple focus trap while the dialog is open (Tab cycles within the panel).
+  const onPanelKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'Tab' || !panelRef.current) return;
+    const focusable = panelRef.current.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
 
   return (
     <div
+      ref={panelRef}
       className="amqur-panel"
       role="dialog"
       aria-modal="true"
       aria-label={`${locationName} assistant`}
-      style={{ display: 'flex', flexDirection: 'column' }}
+      onKeyDown={onPanelKeyDown}
     >
       <header className="amqur-header amq-header">
         <div className="amq-header__brand">
@@ -133,77 +163,59 @@ export function WidgetPanel({
         </div>
         <button
           className="amqur-iconbtn amq-new"
-          onClick={newConversation}
+          onClick={requestNewConversation}
           aria-label={c(lang, 'newChat')}
           title={c(lang, 'newChat')}
           type="button"
         >
-          <span aria-hidden style={{ fontSize: 18, lineHeight: 1 }}>↺</span>
+          <NewChatIcon />
         </button>
         <button
           ref={closeRef}
           className="amqur-iconbtn amq-close"
           onClick={onClose}
-          aria-label="Close chat"
+          aria-label={c(lang, 'closeChat')}
           type="button"
         >
           <CloseIcon />
         </button>
       </header>
 
-      <div
-        className="amqur-body"
-        style={{
-          padding: 0,
-          gap: 0,
-          flex: 1,
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
+      {confirmNew && (
+        <div className="amq-confirm" role="alertdialog" aria-modal="true" aria-labelledby="amq-confirm-title">
+          <p id="amq-confirm-title">{c(lang, 'newChatConfirm')}</p>
+          <div className="amq-actions">
+            <button type="button" className="amq-btn amq-btn--primary" onClick={commitNewConversation}>
+              {c(lang, 'newChatConfirmAction')}
+            </button>
+            <button type="button" className="amq-btn amq-btn--ghost" onClick={() => setConfirmNew(false)}>
+              {c(lang, 'newChatCancel')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="amqur-body amq-body">
         {chatEnabled ? (
           <ChatView key={session} />
         ) : (
-          <div style={{ padding: 16, fontSize: 14 }}>
-            Chat is not enabled for this location.
-          </div>
+          <div className="amq-unavailable">{c(lang, 'chatUnavailable')}</div>
         )}
       </div>
 
       {showFooter && (
-        <footer
-          style={{
-            borderTop: '1px solid rgba(0,0,0,0.06)',
-            padding: '10px 14px',
-            fontSize: '11px',
-            lineHeight: 1.45,
-            color: 'var(--amqur-text, #141414)',
-            opacity: 0.75,
-            background: 'rgba(255,255,255,0.5)',
-          }}
-        >
-          {disclaimerText && <p style={{ margin: '0 0 6px' }}>{disclaimerText}</p>}
-          {consentText && <p style={{ margin: '0 0 6px' }}>{consentText}</p>}
+        <footer className="amq-footer">
+          {disclaimerText && <p>{disclaimerText}</p>}
+          {consentText && <p>{consentText}</p>}
           {(privacyUrl || termsUrl) && (
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <div className="amq-footer__links">
               {privacyUrl && (
-                <a
-                  href={privacyUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: 'inherit' }}
-                >
+                <a href={privacyUrl} target="_blank" rel="noopener noreferrer">
                   {t(locale, 'privacy')}
                 </a>
               )}
               {termsUrl && (
-                <a
-                  href={termsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: 'inherit' }}
-                >
+                <a href={termsUrl} target="_blank" rel="noopener noreferrer">
                   {t(locale, 'terms')}
                 </a>
               )}

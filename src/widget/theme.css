@@ -1,3 +1,9 @@
+/* Host reset: block host inheritance of color/line-height into the open Shadow root. */
+:host {
+    all: initial;
+    display: block;
+}
+
 /* Variables on .amqur so they apply inside Shadow DOM (:root would target the document). */
 .amqur {
     /* Tenant-configurable */
@@ -5,19 +11,27 @@
     --amqur-accent: #ffffff;
 
     /* Neutral system */
-    --amqur-bg: #f6f6f4;
+    --amqur-bg: #f5f5f2;
     --amqur-surface: #ffffff;
-    --amqur-text: rgba(20, 20, 20, 0.96);
-    --amqur-muted: rgba(20, 20, 20, 0.6);
-    --amqur-border: rgba(0, 0, 0, 0.08);
+    --amqur-text: rgba(20, 22, 28, 0.96);
+    --amqur-muted: rgba(20, 22, 28, 0.58);
+    --amqur-border: rgba(15, 20, 30, 0.09);
 
-    --amqur-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
+    --amqur-shadow: 0 18px 50px -12px rgba(15, 20, 35, 0.28), 0 2px 8px rgba(15, 20, 35, 0.06);
+    --amq-card-shadow: 0 1px 2px rgba(15, 20, 35, 0.05), 0 6px 18px -8px rgba(15, 20, 35, 0.14);
     --amqur-radius-panel: 18px;
     --amqur-radius-control: 12px;
     --amqur-radius-bubble: 14px;
 
-    --amqur-font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+    /* Intentional system stack — never claim a webfont that is not shipped. */
+    --amqur-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
         "Apple Color Emoji", "Segoe UI Emoji";
+
+    color: var(--amqur-text);
+    line-height: 1.45;
+    letter-spacing: normal;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
 }
 
 .amqur * {
@@ -52,6 +66,21 @@
 
 .amqur-launcher:hover {
     transform: scale(1.03);
+}
+
+.amqur-launcher:active {
+    transform: scale(0.97);
+}
+
+.amqur-launcher--offline {
+    box-shadow: 0 0 0 3px #f59e0b, var(--amqur-shadow);
+}
+
+.amqur-launcher__img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: inherit;
 }
 
 .amqur-launcher:focus-visible {
@@ -112,7 +141,6 @@
 
 /* Header */
 .amqur-header {
-    height: 48px;
     display: flex;
     align-items: center;
     padding: 0 10px;
@@ -333,10 +361,10 @@
 .amq-msg--error p { background: #fff4f2; border: 1px solid #f3c2b8; color: #8a2a17; }
 .amq-disclaimer { margin: 0; font-size: 11.5px; color: var(--amqur-muted); padding: 0 4px; }
 
-.amq-typing { align-self: flex-start; display: inline-flex; gap: 4px; padding: 12px 14px; background: var(--amqur-surface); border: 1px solid var(--amqur-border); border-radius: 16px 16px 16px 6px; }
-.amq-typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--amqur-muted); animation: amq-dot 1.1s infinite ease-in-out; }
-.amq-typing span:nth-child(2) { animation-delay: .15s; }
-.amq-typing span:nth-child(3) { animation-delay: .3s; }
+.amq-typing { align-self: flex-start; display: inline-flex; gap: 4px; padding: 12px 14px; background: var(--amqur-surface); border: 1px solid var(--amqur-border); border-radius: 16px 16px 16px 6px; align-items: center; }
+.amq-typing > span[aria-hidden] { width: 6px; height: 6px; border-radius: 50%; background: var(--amqur-muted); animation: amq-dot 1.1s infinite ease-in-out; }
+.amq-typing > span[aria-hidden]:nth-child(2) { animation-delay: .15s; }
+.amq-typing > span[aria-hidden]:nth-child(3) { animation-delay: .3s; }
 .amq-presence { align-self: center; font-size: 12px; color: var(--amqur-muted); padding: 4px 10px; border-radius: 999px; background: rgba(0,0,0,.04); }
 
 .amq-cards { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(240px, 82%); gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px; max-width: calc(400px - 28px); }
@@ -424,7 +452,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
     .amq-msg, .amqur-panel { animation: none; }
-    .amq-typing span { animation: none; opacity: .6; }
+    .amq-typing > span[aria-hidden] { animation: none; opacity: .6; }
     .amq-btn, .amq-dept { transition: none; }
 }
 @media (forced-colors: active) {
@@ -437,14 +465,6 @@
 @media (max-width: 480px) { .amqur-panel { position: fixed; } }
 
 /* ───────────── Owner-demo polish (2026-10) ───────────── */
-.amqur {
-    --amqur-bg: #f5f5f2;
-    --amqur-muted: rgba(20, 22, 28, 0.58);
-    --amqur-border: rgba(15, 20, 30, 0.09);
-    --amqur-shadow: 0 18px 50px -12px rgba(15, 20, 35, 0.28), 0 2px 8px rgba(15, 20, 35, 0.06);
-    --amq-card-shadow: 0 1px 2px rgba(15, 20, 35, 0.05), 0 6px 18px -8px rgba(15, 20, 35, 0.14);
-    --amqur-font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-}
 
 /* Launcher */
 .amqur-launcher { width: 60px; height: 60px; border-radius: 20px; }
@@ -453,7 +473,7 @@
 /* Header */
 .amq-header { height: auto; min-height: 60px; padding: 10px 10px 10px 14px; gap: 10px; background: var(--amqur-surface); border-bottom: 1px solid var(--amqur-border); }
 .amq-header__brand { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
-.amq-header__logo { height: 30px; width: auto; border-radius: 6px; }
+.amq-header__logo { height: 32px; max-height: 32px; max-width: 140px; width: auto; object-fit: contain; border-radius: 6px; }
 .amq-avatar { width: 36px; height: 36px; flex: 0 0 36px; border-radius: 12px; display: grid; place-items: center; font-size: 13px; font-weight: 750; letter-spacing: .02em; background: var(--amqur-primary); color: var(--amqur-accent); }
 .amq-header__text { display: flex; flex-direction: column; min-width: 0; }
 .amq-header__title { font-size: 15px; font-weight: 680; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -477,7 +497,22 @@
 
 /* Typing */
 .amq-typing { padding: 12px 14px; gap: 5px; border-radius: 18px 18px 18px 6px; }
-.amq-typing span { width: 7px; height: 7px; }
+.amq-typing > span[aria-hidden] { width: 7px; height: 7px; }
+.amq-typing__label { font-size: 12px; color: var(--amqur-muted); margin-left: 4px; }
+
+.amq-quick { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 8px; }
+.amq-chip--quick { cursor: pointer; border: 1px solid var(--amqur-border); background: var(--amqur-surface); }
+.amq-chip--quick:hover { border-color: var(--amqur-primary); }
+
+.amq-confirm { margin: 0; padding: 12px 14px; border-bottom: 1px solid var(--amqur-border); background: #fffdf7; display: flex; flex-direction: column; gap: 10px; }
+.amq-confirm p { margin: 0; font-size: 13px; line-height: 1.45; color: var(--amqur-text); }
+
+.amq-footer { border-top: 1px solid var(--amqur-border); padding: 10px 14px; font-size: 11px; line-height: 1.45; color: var(--amqur-muted); background: rgba(255, 255, 255, 0.55); }
+.amq-footer p { margin: 0 0 6px; }
+.amq-footer__links { display: flex; gap: 12px; flex-wrap: wrap; }
+.amq-footer a { color: inherit; }
+.amq-body { padding: 0; gap: 0; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.amq-unavailable { padding: 16px; font-size: 14px; color: var(--amqur-muted); }
 
 /* Cards */
 .amq-card { border-radius: 16px; padding: 14px; gap: 8px; box-shadow: var(--amq-card-shadow); }
