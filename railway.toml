@@ -1,8 +1,9 @@
 [build]
 builder = "DOCKERFILE"
-# Staging GitHub-connected deploys use the labeled canary host.
-# Production Deploy.yml forces Dockerfile before railway up.
-dockerfilePath = "Dockerfile.staging"
+# Safe shared-repository default: production CDN image, never staging canary HTML.
+# Staging Deploy workflow switches to Dockerfile.staging immediately before railway up.
+# Railway-connected STAGING service must override Dockerfile path explicitly if bypassing Actions.
+dockerfilePath = "Dockerfile"
 
 [deploy]
 healthcheckPath = "/"
