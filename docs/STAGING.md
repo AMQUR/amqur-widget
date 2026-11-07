@@ -7,7 +7,7 @@
 
 ## Deploy
 Staging ships the labeled employee canary host via `Dockerfile.staging`.
-The repository's `railway.toml` **defaults to production `Dockerfile`** as a fail-safe. GitHub Actions staging Deploy switches to `Dockerfile.staging` immediately before `railway up`. **Direct Railway GitHub-connected staging deployments** must explicitly override the Dockerfile path to `Dockerfile.staging` in the staging service settings; never change the repo-wide default. The production Deploy job forces `Dockerfile`, and the production image build rejects staging HTML.
+**Verified 2026-11-07:** Railway's GitHub-connected staging service follows the repository's `railway.toml` directly. Changing the repo default to the production `Dockerfile` caused the staging host to lose its employee-only banner. The repository therefore defaults to **`Dockerfile.staging`**. The GitHub Actions production Deploy workflow explicitly switches to `Dockerfile`; a direct GitHub-connected production service must **not** use this shared config. Production remains on the prior SHA while this staging rollback is checked. Keep staging employee-only and verify the banner after every source push.
 
 ```bash
 # Prefer GitHub Actions Deploy → staging, or Railway staging-only pin of the RC SHA.
