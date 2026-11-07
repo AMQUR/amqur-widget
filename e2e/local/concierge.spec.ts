@@ -160,6 +160,45 @@ test.describe('Concierge Canvas', () => {
         expect(fontSize).toBe('17px');
     });
 
+    test('SVGs stay inside Shadow DOM and vehicle media (no stray icons)', async ({ page }, info) => {
+        test.skip(info.project.name !== 'chromium', 'single engine is enough');
+        const launcher = await boot(page);
+        await launcher.click();
+        await say(page, 'Looking for a black Wrangler under 45 grand.');
+        await expect(page.locator('.amq-vcard').first()).toBeVisible({ timeout: 15_000 });
+        const report = await page.evaluate(() => {
+            const lightSvgs = document.querySelectorAll('svg').length;
+            const host = Array.from(document.querySelectorAll('*')).find(
+                (e) => (e as HTMLElement).shadowRoot,
+            ) as HTMLElement | undefined;
+            const root = host?.shadowRoot;
+            if (!root) return { lightSvgs, shadowSvgs: 0, escaped: true, mediaRelative: false };
+            const shadowSvgs = root.querySelectorAll('svg').length;
+            const medias = Array.from(root.querySelectorAll('.amq-vcard__media'));
+            const mediaRelative =
+                medias.length === 0 ||
+                medias.every((m) => getComputedStyle(m as Element).position === 'relative');
+            const dialog = root.querySelector('[role="dialog"]') as HTMLElement | null;
+            const db = dialog?.getBoundingClientRect();
+            let escaped = false;
+            if (db) {
+                for (const svg of Array.from(root.querySelectorAll('.amq-vcard svg, .amq-vcard__silhouette'))) {
+                    const r = (svg as Element).getBoundingClientRect();
+                    if (r.width === 0 && r.height === 0) continue;
+                    if (r.bottom < db.top - 2 || r.top > db.bottom + 2 || r.right < db.left - 2 || r.left > db.right + 2) {
+                        escaped = true;
+                        break;
+                    }
+                }
+            }
+            return { lightSvgs, shadowSvgs, escaped, mediaRelative };
+        });
+        expect(report.lightSvgs).toBe(0);
+        expect(report.shadowSvgs).toBeGreaterThan(0);
+        expect(report.mediaRelative).toBe(true);
+        expect(report.escaped).toBe(false);
+    });
+
     test('reduced motion: replies are not artificially delayed', async ({ page }, info) => {
         test.skip(info.project.name !== 'chromium', 'single engine is enough');
         await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -210,8 +249,9 @@ test.describe('Concierge Canvas', () => {
         await page.reload();
         await page.getByRole('button', { name: /open assistant/i }).click();
         await expect(page.locator('.amq-msg--user').first()).toContainText('Wranglers');
-        // New conversation starts clean.
+        // New conversation starts clean (confirm dialog when a session exists).
         await page.getByRole('button', { name: /start a new conversation/i }).click();
+        await page.getByRole('button', { name: /start fresh/i }).click();
         await expect(page.locator('.amq-msg--user')).toHaveCount(0);
         await say(page, 'hi');
         const second = await page.evaluate((k) => JSON.parse(localStorage.getItem(k) ?? '{}').id, key);

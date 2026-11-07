@@ -54,8 +54,10 @@ jobs:
             --set "APP_RELEASE_ID=${{ github.run_id }}-${{ github.run_attempt }}" \
             --set "APP_RELEASE_VERSION=${VERSION}" \
             --skip-deploys
-          # Staging uses the labeled employee canary host.
+          # Staging uses the labeled employee canary host (idempotent if
+          # railway.toml already points at Dockerfile.staging).
           sed -i 's|dockerfilePath = "Dockerfile"|dockerfilePath = "Dockerfile.staging"|' railway.toml
+          grep -q 'dockerfilePath = "Dockerfile.staging"' railway.toml
           railway up --project "$RAILWAY_PROJECT_ID" --service widget --environment staging --ci
       - name: Staging smoke — release identity + loader served
         run: |
@@ -79,6 +81,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Manual gate
         run: echo "approved by required reviewer"
+      - name: Enforce backup restore + alert delivery evidence before production promotion
+        env:
+          AMQUR_PRODUCTION_APPROVED_SHA: ${{ vars.AMQUR_PRODUCTION_APPROVED_SHA }}
+          AMQUR_BACKUP_RESTORE_RECEIPT: ${{ vars.AMQUR_BACKUP_RESTORE_RECEIPT }}
+          AMQUR_BACKUP_RESTORE_AT: ${{ vars.AMQUR_BACKUP_RESTORE_AT }}
+          AMQUR_ALERT_DELIVERY_RECEIPT: ${{ vars.AMQUR_ALERT_DELIVERY_RECEIPT }}
+          AMQUR_ALERT_DELIVERY_AT: ${{ vars.AMQUR_ALERT_DELIVERY_AT }}
+        run: node scripts/production-release-gate.mjs
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -97,6 +107,9 @@ jobs:
             --set "APP_RELEASE_ID=${{ github.run_id }}-${{ github.run_attempt }}" \
             --set "APP_RELEASE_VERSION=${VERSION}" \
             --skip-deploys
+          # railway.toml may point at Dockerfile.staging for GitHub-connected
+          # staging pins — production must always ship the CDN Dockerfile.
+          sed -i 's|dockerfilePath = "Dockerfile.staging"|dockerfilePath = "Dockerfile"|' railway.toml
           railway up --project "$RAILWAY_PROJECT_ID" --service prod-widget --environment production --ci
       - name: Rollback hint on failure
         if: failure()

@@ -21,6 +21,8 @@ export default defineConfig({
       "**/node_modules/**",
       "**/dist/**",
       "**/e2e/**",
+      // Node built-in test runner suites (invoked via `node --test` in CI).
+      "**/scripts/**/*.test.mjs",
       "**/.{idea,git,cache,output,temp}/**",
     ],
   },
