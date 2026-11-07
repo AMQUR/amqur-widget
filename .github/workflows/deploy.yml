@@ -81,6 +81,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Manual gate
         run: echo "approved by required reviewer"
+      - name: Enforce backup restore + alert delivery evidence before production promotion
+        env:
+          AMQUR_PRODUCTION_APPROVED_SHA: ${{ vars.AMQUR_PRODUCTION_APPROVED_SHA }}
+          AMQUR_BACKUP_RESTORE_RECEIPT: ${{ vars.AMQUR_BACKUP_RESTORE_RECEIPT }}
+          AMQUR_BACKUP_RESTORE_AT: ${{ vars.AMQUR_BACKUP_RESTORE_AT }}
+          AMQUR_ALERT_DELIVERY_RECEIPT: ${{ vars.AMQUR_ALERT_DELIVERY_RECEIPT }}
+          AMQUR_ALERT_DELIVERY_AT: ${{ vars.AMQUR_ALERT_DELIVERY_AT }}
+        run: node scripts/production-release-gate.mjs
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
