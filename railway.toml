@@ -1,9 +1,11 @@
 [build]
 builder = "DOCKERFILE"
-# Safe shared-repository default: production CDN image, never staging canary HTML.
-# Staging Deploy workflow switches to Dockerfile.staging immediately before railway up.
-# Railway-connected STAGING service must override Dockerfile path explicitly if bypassing Actions.
-dockerfilePath = "Dockerfile"
+# Staging is GitHub-connected and reads railway.toml directly on each PR push.
+# Keep the employee-only staging image as the default to prevent unsafe staging
+# HTML from losing its banner during direct GitHub-connected deploys.
+# Production GitHub Actions MUST explicitly switch to Dockerfile before railway up.
+# Direct GitHub-connected production deployment must NOT use this shared config.
+dockerfilePath = "Dockerfile.staging"
 
 [deploy]
 healthcheckPath = "/"
