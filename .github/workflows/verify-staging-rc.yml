@@ -1,0 +1,79 @@
+name: Staging RC verification (widget only)
+on:
+  push:
+    branches:
+      - cursor/phase1-integrated-release-4b87
+    paths:
+      - .github/workflows/verify-staging-rc.yml
+
+concurrency:
+  group: widget-staging-rc
+  cancel-in-progress: false
+permissions:
+  contents: read
+
+jobs:
+  staging-widget-only:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Guard staging-only environment
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "cursor/phase1-integrated-release-4b87"
+          test -n "${{ secrets.RAILWAY_API_TOKEN }}"
+          grep -Fq 'dockerfilePath = "Dockerfile"' railway.toml
+      - name: Install toolchain
+        run: |
+          npm ci
+          npm i -g @railway/cli
+          npm run build
+      - name: Stage candidate widget only (never production)
+        env:
+          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
+          RAILWAY_PROJECT_ID: 3bca40b6-01c6-4f02-9464-8682e6ffcb75
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p 'require("./package.json").version')
+          railway variables --project "$RAILWAY_PROJECT_ID" --service widget --environment staging \
+            --set "APP_COMMIT_SHA=$GITHUB_SHA" \
+            --set "APP_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --set "APP_RELEASE_ID=${{ github.run_id }}-${{ github.run_attempt }}" \
+            --set "APP_RELEASE_VERSION=$VERSION" \
+            --skip-deploys
+          sed -i 's|dockerfilePath = "Dockerfile"|dockerfilePath = "Dockerfile.staging"|' railway.toml
+          grep -Fq 'dockerfilePath = "Dockerfile.staging"' railway.toml
+          railway up --project "$RAILWAY_PROJECT_ID" --service widget --environment staging --ci
+      - name: Verify exact staging SHA, banner and security headers
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 30); do
+            actual=$(curl -fsS --max-time 10 https://staging-widget.dialusnow.com/version.json | node -e 'let x="";process.stdin.on("data",d=>x+=d).on("end",()=>{try{console.log(JSON.parse(x).commitSha)}catch{console.log("bad")}})' || true)
+            test "$actual" = "$GITHUB_SHA" && break
+            sleep 10
+          done
+          test "$actual" = "$GITHUB_SHA"
+          curl -fsS https://staging-widget.dialusnow.com/ | grep -q 'STAGING'
+          curl -fsS https://staging-widget.dialusnow.com/assistant-widget.iife.js | dd bs=40 count=1 2>/dev/null | grep -q 'AmqurWidgetBundle'
+          curl -fsSI https://staging-widget.dialusnow.com/assistant-widget.iife.js | tr -d '\r' | grep -qi '^x-content-type-options: nosniff'
+          echo "Staging widget exact SHA, labeling and nosniff verified"
+      - name: Browser checks against staging
+        env:
+          STAGING_WIDGET_URL: https://staging-widget.dialusnow.com
+          STAGING_API_URL: https://staging-api.dialusnow.com/api
+        run: |
+          npx playwright install --with-deps chromium firefox webkit
+          npm run test:staging
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: widget-staging-rc-playwright
+          path: playwright-report/
+          if-no-files-found: ignore
+          retention-days: 14
