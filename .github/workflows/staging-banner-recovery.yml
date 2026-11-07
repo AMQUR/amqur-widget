@@ -1,0 +1,41 @@
+name: Verify employee-only staging banner after Dockerfile restore
+on:
+  push:
+    branches:
+      - cursor/phase1-integrated-release-4b87
+    paths:
+      - .github/workflows/staging-banner-recovery.yml
+permissions:
+  contents: read
+jobs:
+  staging-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Wait for direct Railway staging auto-deploy and verify employee-only mode
+        run: |
+          node --input-type=module <<'NODE'
+          const host='https://staging-widget.dialusnow.com';
+          const expected=process.env.GITHUB_SHA;
+          let last='unknown';
+          for(let attempt=0;attempt<50;attempt++){
+            try{
+              const [ver,html]=await Promise.all([
+                fetch(host+'/version.json',{signal:AbortSignal.timeout(12000)}),
+                fetch(host+'/',{signal:AbortSignal.timeout(12000)})
+              ]);
+              const v=await ver.json(),text=await html.text();
+              const sha=String(v.commitSha||'');
+              const banner=text.includes('STAGING — NOT FOR CUSTOMERS');
+              last='sha='+sha.slice(0,12)+' banner='+banner+' http='+html.status;
+              if(ver.ok&&html.ok&&sha===expected&&banner){
+                console.log('PASS exact staging SHA '+sha.slice(0,12)+' employee-only banner confirmed');
+                process.exit(0);
+              }
+              if(ver.ok&&html.ok&&!banner) console.log('WARN staging banner absent, awaiting direct deployment attempt '+(attempt+1));
+            }catch(e){last='network='+String(e?.name||'unknown');}
+            await new Promise(r=>setTimeout(r,10000));
+          }
+          console.error('FAIL staging employee-only image not verified: '+last);
+          process.exit(1);
+          NODE
