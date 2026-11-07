@@ -1,0 +1,60 @@
+name: Public CDN safety probe (read only)
+on:
+  push:
+    branches: [inspect/cdn-public-20261107]
+    paths: [.github/workflows/public-cdn-safety-probe.yml]
+
+permissions:
+  contents: read
+jobs:
+  cdn-public-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify production and staging widget CDN without modifying either
+        run: |
+          node --input-type=module <<'NODE'
+          const hosts = [
+            ['production','https://widget.dialusnow.com'],
+            ['staging','https://staging-widget.dialusnow.com']
+          ];
+          let pass=0,fail=0;
+          function record(test,ok,info='') {
+            console.log((ok?'PASS':'FAIL')+' '+test+(info?' '+info:''));
+            ok?pass++:fail++;
+          }
+          async function read(url,{method='GET'}={}){
+            try {
+              const r=await fetch(url,{method,signal:AbortSignal.timeout(15000),redirect:'follow'});
+              const body=method==='HEAD'?'':await r.text();
+              return {status:r.status,body,contentType:r.headers.get('content-type')||'',headers:r.headers};
+            } catch(e){return {status:0,body:'',contentType:'',headers:new Headers(),error:String(e?.name||'network_error')};}
+          }
+          const versions={};
+          for(const [env,base] of hosts){
+            const v=await read(base+'/version.json');
+            let parsed={};try{parsed=JSON.parse(v.body)}catch{}
+            versions[env]=parsed;
+            record(env+' version available',v.status===200 && /^[a-f0-9]{40}$/i.test(parsed.commitSha||''),'HTTP '+v.status+' sha='+String(parsed.commitSha||'').slice(0,12));
+            const js=await read(base+'/assistant-widget.iife.js');
+            record(env+' JS available',js.status===200 && /javascript|ecmascript/i.test(js.contentType),'HTTP '+js.status);
+            record(env+' IIFE namespace',js.body.slice(0,250).includes('AmqurWidgetBundle'));
+            record(env+' never ships server secrets',!/JWT_SECRET|DATABASE_URL|TEKION_CLIENT_SECRET|BEGIN PRIVATE KEY/.test(js.body));
+            const nosniff=js.headers.get('x-content-type-options')==='nosniff';
+            record(env+' CDN nosniff',nosniff);
+            const index=await read(base+'/');
+            record(env+' homepage reachable',index.status===200,'HTTP '+index.status);
+            if(env==='production'){
+              record('production has no staging banner',!index.body.includes('STAGING — NOT FOR CUSTOMERS'));
+              record('production main release unchanged',parsed.commitSha==='2b3a4b47b36cd308777ba150bb6773ec16731d82');
+            } else {
+              record('staging employee-only banner',index.body.includes('STAGING — NOT FOR CUSTOMERS'));
+            }
+          }
+          console.log('SUMMARY pass='+pass+' fail='+fail+' read_only=1');
+          process.exit(fail?1:0);
+          NODE
