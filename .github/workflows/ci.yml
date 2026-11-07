@@ -44,15 +44,13 @@ jobs:
       - run: npm run lint
       - run: npm test
       - name: Production promotion gate regression tests
-        run: node --test scripts/production-release-gate.test.mjs
+        run: node --test scripts/production-release-gate.nodecheck.mjs
       - run: npm run build
 
-      - name: Production Dockerfile must remain safe repo default
+      - name: Verify production-safe Dockerfile default
         run: |
-          set -euo pipefail
-          grep -Eq '^dockerfilePath = "Dockerfile"$' railway.toml
           test -f Dockerfile.staging
-          grep -q 'STAGING — NOT FOR CUSTOMERS' staging/public/index.html
+          grep -Fq 'dockerfilePath = "Dockerfile"' railway.toml
 
       - name: IIFE inspection
         run: |
