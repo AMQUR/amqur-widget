@@ -43,6 +43,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+      - name: Production promotion gate regression tests
+        run: node --test scripts/production-release-gate.test.mjs
       - run: npm run build
 
       - name: IIFE inspection
