@@ -7,9 +7,7 @@
 
 ## Deploy
 Staging ships the labeled employee canary host via `Dockerfile.staging`.
-`railway.toml` on this branch points at `Dockerfile.staging` for GitHub-connected
-staging pins. The production Deploy job forces `Dockerfile` before `railway up`
-so canary HTML cannot reach `prod-widget`.
+The repository's `railway.toml` **defaults to production `Dockerfile`** as a fail-safe. GitHub Actions staging Deploy switches to `Dockerfile.staging` immediately before `railway up`. **Direct Railway GitHub-connected staging deployments** must explicitly override the Dockerfile path to `Dockerfile.staging` in the staging service settings; never change the repo-wide default. The production Deploy job forces `Dockerfile`, and the production image build rejects staging HTML.
 
 ```bash
 # Prefer GitHub Actions Deploy → staging, or Railway staging-only pin of the RC SHA.
