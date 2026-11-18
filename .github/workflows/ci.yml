@@ -46,6 +46,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+      - name: Install snippets match install-targets.json
+        run: npm run check:snippets
       - run: npm run build
 
       - name: IIFE inspection

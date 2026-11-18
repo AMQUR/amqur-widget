@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-11-18",
+  "note": "Single source of truth for website install snippets. Snippets in website-snippets/ are generated from this file by scripts/build-install-snippets.mjs; never edit them by hand. A target's origin is the exact browser Origin (scheme + host) that must be allowlisted on that tenant before its snippet can work.",
+  "environments": {
+    "production": {
+      "widgetHost": "https://widget.dialusnow.com",
+      "apiHost": "https://api.dialusnow.com"
+    },
+    "staging": {
+      "widgetHost": "https://staging-widget.dialusnow.com",
+      "apiHost": "https://staging-api.dialusnow.com"
+    }
+  },
+  "targets": [
+    {
+      "id": "dial-chevy",
+      "name": "Dial Chevy of Chicago",
+      "kind": "rooftop",
+      "tenantSlug": "dial-chevy-of-chicago",
+      "locationSlug": "main",
+      "origin": "https://www.dialchevy.com",
+      "hostnameEvidence": "Linked from the group site's locations page; apex dialchevy.com 301-redirects to www (HTTP check 2026-11-18).",
+      "cms": "DealerOn",
+      "cmsEvidence": "verified: x-dealeron response headers on https://www.dialchevy.com/ (2026-11-18)"
+    },
+    {
+      "id": "dial-nissan",
+      "name": "Dial Nissan of Chicago",
+      "kind": "rooftop",
+      "tenantSlug": "dial-nissan-of-chicago",
+      "locationSlug": "main",
+      "origin": "https://www.dialnissan.com",
+      "hostnameEvidence": "Linked from the group site's locations page (search index, 2026-11-18). Canonical www vs apex not confirmed in a browser.",
+      "cms": "Team Velocity (Apollo)",
+      "cmsEvidence": "unverified: site answers automated requests with an Akamai 403; vendor per prior project records only"
+    },
+    {
+      "id": "infiniti-of-chicago",
+      "name": "INFINITI of Chicago",
+      "kind": "rooftop",
+      "tenantSlug": "infiniti-of-chicago",
+      "locationSlug": "main",
+      "origin": "https://www.infinitichicago.com",
+      "hostnameEvidence": "Linked from the group site's locations page (search index, 2026-11-18). Canonical www vs apex not confirmed in a browser.",
+      "cms": "Team Velocity (Apollo)",
+      "cmsEvidence": "unverified: site answers automated requests with an Akamai 403; vendor per prior project records only"
+    },
+    {
+      "id": "dial-cdjr-south",
+      "name": "Dial Chrysler Dodge Jeep Ram of Chicago South",
+      "kind": "rooftop",
+      "tenantSlug": "dial-cdjr-of-chicago",
+      "locationSlug": "main",
+      "origin": "https://www.dialjeep.com",
+      "hostnameEvidence": "Linked from the group site's locations page (search index, 2026-11-18). Canonical www vs apex not confirmed in a browser.",
+      "cms": "Team Velocity (Apollo)",
+      "cmsEvidence": "unverified: site answers automated requests with an Akamai 403; vendor per prior project records only"
+    },
+    {
+      "id": "jeep-of-chicago-north",
+      "name": "Jeep of Chicago (North)",
+      "kind": "rooftop",
+      "tenantSlug": "jeep-of-chicago",
+      "locationSlug": "main",
+      "origin": "https://www.jeepofchicago.com",
+      "hostnameEvidence": "Linked from the group site's locations page; https://www.jeepofchicago.com/ returns 200 (HTTP check 2026-11-18).",
+      "cms": "Team Velocity (Apollo)",
+      "cmsEvidence": "verified: Team Velocity assets referenced in the home page HTML (2026-11-18)"
+    },
+    {
+      "id": "dial-auto-group",
+      "name": "Dial Auto Group (group website)",
+      "kind": "group",
+      "tenantSlug": "dial-auto-group",
+      "locationSlug": "main",
+      "origin": "https://www.dialautogroup.com",
+      "hostnameEvidence": "Top search result for the group; canonical www vs apex not confirmed in a browser (Akamai 403 to automated requests).",
+      "cms": "unverified",
+      "cmsEvidence": "unverified: prior records say custom; the indexed pages reference Team Velocity's image service, which suggests Team Velocity. Confirm with the site owner before choosing a runbook."
+    }
+  ]
+}
