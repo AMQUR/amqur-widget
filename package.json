@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:embed": "node scripts/build-embed-loader.mjs",
+    "build:snippets": "node scripts/build-install-snippets.mjs",
+    "check:snippets": "node scripts/build-install-snippets.mjs --check",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
