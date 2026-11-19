@@ -5,7 +5,13 @@
  * Source: src/loaders/embed-loader.js (placeholders RELEASE_SHA, BUILD_TIME)
  * Output: <out>/embed.js, <out>/embed-manifest.json (default out: cdn/public)
  *
- * Usage: node scripts/build-embed-loader.mjs [--env production|staging] [--out <dir>]
+ * Usage: node scripts/build-embed-loader.mjs [--env production|staging|local] [--out <dir>]
+ *        local only: [--widget-host http://127.0.0.1:<port>] [--api-host http://127.0.0.1:<port>]
+ *
+ * `--env local` builds a loader for a developer machine or a protected test run. Its hosts must
+ * be loopback (localhost / 127.0.0.1), it must be written outside cdn/public, and it is labelled
+ * as not for customer websites. It exists so a site under test contacts the local backend it
+ * was configured for instead of production.
  *
  * The source hardcodes the production hosts. `--env staging` rewrites exactly
  * those two literals to the staging hosts so a staging page exercises the
@@ -30,7 +36,28 @@ const HOSTS = {
     widgetHost: 'https://staging-widget.dialusnow.com',
     apiHost: 'https://staging-api.dialusnow.com',
   },
+  local: {
+    widgetHost: 'http://127.0.0.1:4174',
+    apiHost: 'http://127.0.0.1:3001',
+  },
 };
+
+/** Loopback origin only: http(s)://localhost|127.0.0.1[:port], nothing else. */
+function loopbackOrigin(value, flag) {
+  let url;
+  try {
+    url = new URL(value);
+  } catch {
+    console.error(`${flag} is not a URL`);
+    process.exit(2);
+  }
+  const plain = !url.username && !url.password && !url.search && !url.hash && (url.pathname === '/' || url.pathname === '');
+  if (!plain || !['localhost', '127.0.0.1'].includes(url.hostname) || !['http:', 'https:'].includes(url.protocol)) {
+    console.error(`${flag} must be a loopback origin (http://localhost:<port> or http://127.0.0.1:<port>)`);
+    process.exit(2);
+  }
+  return url.origin;
+}
 
 function argValue(name) {
   const i = process.argv.indexOf(name);
@@ -39,14 +66,25 @@ function argValue(name) {
 
 const targetEnv = argValue('--env') ?? 'production';
 if (!Object.hasOwn(HOSTS, targetEnv)) {
-  console.error(`unknown --env "${targetEnv}" (production|staging)`);
+  console.error(`unknown --env "${targetEnv}" (production|staging|local)`);
   process.exit(2);
 }
-const hosts = HOSTS[targetEnv];
+const hosts = { ...HOSTS[targetEnv] };
+if (targetEnv === 'local') {
+  if (argValue('--widget-host')) hosts.widgetHost = loopbackOrigin(argValue('--widget-host'), '--widget-host');
+  if (argValue('--api-host')) hosts.apiHost = loopbackOrigin(argValue('--api-host'), '--api-host');
+} else if (argValue('--widget-host') || argValue('--api-host')) {
+  console.error('--widget-host / --api-host are accepted only with --env local');
+  process.exit(2);
+}
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sourcePath = resolve(root, 'src/loaders/embed-loader.js');
-const outDir = resolve(root, argValue('--out') ?? 'cdn/public');
+const outDir = resolve(root, argValue('--out') ?? (targetEnv === 'local' ? 'dist-local' : 'cdn/public'));
+if (targetEnv === 'local' && (outDir === resolve(root, 'cdn/public') || outDir.startsWith(resolve(root, 'cdn') + '/'))) {
+  console.error('a local loader must never be written into the CDN directory');
+  process.exit(2);
+}
 const embedOut = resolve(outDir, 'embed.js');
 const manifestOut = resolve(outDir, 'embed-manifest.json');
 const widgetBundlePath = resolve(outDir, 'assistant-widget.iife.js');
@@ -114,23 +152,29 @@ let stamped = source
   .replaceAll('RELEASE_SHA', commitSha)
   .replaceAll('BUILD_TIME', buildTime);
 
-if (targetEnv === 'staging') {
+if (targetEnv === 'staging' || targetEnv === 'local') {
+  const label = targetEnv === 'staging' ? 'STAGING' : 'LOCAL TEST';
   stamped = stamped
     .replace(`'${prod.widgetHost}'`, `'${hosts.widgetHost}'`)
     .replace(`'${prod.apiHost}'`, `'${hosts.apiHost}'`)
+    .replace("var EMBED_ENV = 'production';", `var EMBED_ENV = '${targetEnv}';`)
     .replace(
       'AMQUR production one-line embed loader.',
-      'AMQUR STAGING one-line embed loader — NOT FOR CUSTOMER WEBSITES.',
+      `AMQUR ${label} one-line embed loader — NOT FOR CUSTOMER WEBSITES.`,
     )
     .replace(
       'Hosts are hardcoded for production only',
-      'Hosts are hardcoded for staging only',
+      `Hosts are hardcoded for ${targetEnv} only`,
     );
   if (stamped.includes(prod.apiHost) || stamped.includes(prod.widgetHost)) {
-    console.error('staging embed still references a production host');
+    console.error(`${targetEnv} embed still references a production host`);
     process.exit(1);
   }
-} else if (/staging-widget|staging-api|localhost/i.test(stamped)) {
+  if (!stamped.includes(`var EMBED_ENV = '${targetEnv}';`)) {
+    console.error('embed environment marker was not stamped');
+    process.exit(1);
+  }
+} else if (/staging-widget|staging-api|localhost|127\.0\.0\.1/i.test(stamped)) {
   console.error('production embed references a non-production host');
   process.exit(1);
 }
