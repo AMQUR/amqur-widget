@@ -435,6 +435,74 @@ test.describe('accessibility', () => {
         await expect(page.getByRole('button', { name: 'Open assistant' })).toBeFocused();
     });
 
+    test('screen-reader contract: names, roles and announcements a screen reader is given', async ({ page }) => {
+        await page.goto('/?tenant=dial-chevy-of-chicago&theme=showroom');
+        // The launcher is a named button; the panel is a named modal dialog.
+        await page.getByRole('button', { name: 'Open assistant' }).click();
+        const dialog = page.getByRole('dialog');
+        await expect(dialog).toHaveAttribute('aria-modal', 'true');
+        expect((await dialog.getAttribute('aria-label')) ?? '').toMatch(/AI assistant/);
+        // The transcript is a polite live log, so new replies are announced without stealing focus.
+        const log = page.getByRole('log');
+        await expect(log).toHaveAttribute('aria-live', 'polite');
+        // The text box has a real label and the send control a name.
+        await expect(page.getByRole('textbox', { name: /ask about vehicles/i })).toBeVisible();
+        await expect(page.getByRole('button', { name: /^send$/i })).toBeVisible();
+
+        await say(page, 'book a test drive');
+        await settled(page);
+        // After a reply the log is not left busy and holds the reply text.
+        await expect(log).not.toHaveAttribute('aria-busy', 'true');
+        expect(((await log.innerText()) ?? '').length).toBeGreaterThan(20);
+
+        // Lead form: a named form; every field and checkbox has an accessible name.
+        const form = page.getByRole('form', { name: /Dial Chevy of Chicago/ });
+        await expect(form).toBeVisible();
+        const unnamed = await form.evaluate((el) => {
+            const out: string[] = [];
+            el.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea').forEach((c) => {
+                if (c.type === 'hidden') return;
+                const id = c.id;
+                const root = c.getRootNode() as ShadowRoot;
+                const labelled = (id && root.querySelector(`label[for="${id}"]`)) || c.closest('label') || c.getAttribute('aria-label') || c.getAttribute('aria-labelledby');
+                if (!labelled) out.push(c.name || c.type);
+            });
+            return out;
+        });
+        expect(unnamed).toEqual([]);
+        // Consent boxes start unticked and say what they consent to.
+        const consent = form.getByRole('checkbox');
+        expect(await consent.count()).toBeGreaterThan(0);
+        for (let i = 0; i < (await consent.count()); i += 1) await expect(consent.nth(i)).not.toBeChecked();
+
+        // Submitting with problems: an alert summarises them, the bad field is marked invalid
+        // and described by its message, and focus moves to it.
+        await form.getByRole('button', { name: 'Send to the team' }).click();
+        await expect(form.getByRole('alert').first()).toBeVisible();
+        const focused = await page.evaluate(() => {
+            const a = document.getElementById('amqur-widget-host')!.shadowRoot!.activeElement as HTMLElement | null;
+            if (!a) return null;
+            const describedBy = a.getAttribute('aria-describedby');
+            const root = a.getRootNode() as ShadowRoot;
+            return { tag: a.tagName, invalid: a.getAttribute('aria-invalid'), described: describedBy ? !!root.getElementById(describedBy.split(' ')[0])?.textContent?.trim() : false };
+        });
+        expect(focused?.tag).toMatch(/INPUT|SELECT|TEXTAREA/);
+        expect(focused?.invalid).toBe('true');
+        expect(focused?.described).toBe(true);
+
+        // Vehicle cards: pictures have text alternatives, carousels are named regions.
+        await say(page, 'shop vehicles');
+        await settled(page);
+        const region = page.getByRole('region', { name: /vehicles/ }).last();
+        await expect(region).toBeVisible();
+        const missingAlt = await region.evaluate((el) => Array.from(el.querySelectorAll('img')).filter((i) => !i.hasAttribute('alt')).length);
+        expect(missingAlt).toBe(0);
+        // No control is identified by an icon alone.
+        const nameless = await region.evaluate((el) => Array.from(el.querySelectorAll('button, a[href]')).filter((b) => !(b.textContent || '').trim() && !b.getAttribute('aria-label') && !b.getAttribute('aria-labelledby')).length);
+        expect(nameless).toBe(0);
+        expect(await region.getByRole('article').count()).toBeGreaterThan(0);
+    });
+
     test('touch targets are at least 44px; reduced motion disables animation', async ({ page }) => {
         await page.emulateMedia({ reducedMotion: 'reduce' });
         await open(page, 'tenant=dial-auto-group&theme=showroom');
