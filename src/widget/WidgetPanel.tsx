@@ -8,6 +8,7 @@ import { c } from './concierge/copy';
 import { fetchStoreStatus, type StoreStatus } from './api/chat.api';
 import { getConversationId, startNewConversation } from '../connect';
 import { clearCompareVins } from './compareVehicles';
+import { nextFocusIndex } from './focusTrap';
 import type { Lang } from './concierge/types';
 
 function initials(name: string) {
@@ -118,27 +119,22 @@ export function WidgetPanel({
     closeRef.current?.focus();
   }, []);
 
-  // Simple focus trap while the dialog is open (Tab cycles within the panel).
+  // Focus trap while the dialog is open. Every Tab is moved by hand rather than only at the
+  // first and last control: Safari's default Tab skips buttons and links, so leaving the
+  // middle of the order to the browser lets focus jump from the text box straight out of the
+  // dialog.
   const onPanelKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     if (e.key !== 'Tab' || !panelRef.current) return;
     const focusable = panelRef.current.querySelectorAll<HTMLElement>(
       'button:not([disabled]), [href], textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
     );
-    if (focusable.length === 0) return;
     const visible = Array.from(focusable).filter((el) => el.getClientRects().length > 0);
     if (visible.length === 0) return;
-    const first = visible[0]!;
-    const last = visible[visible.length - 1]!;
     // Inside a shadow root, document.activeElement is the host element, never the control.
     const root = panelRef.current.getRootNode() as Document | ShadowRoot;
-    const active = root.activeElement;
-    if (e.shiftKey && active === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && active === last) {
-      e.preventDefault();
-      first.focus();
-    }
+    const next = nextFocusIndex(visible.indexOf(root.activeElement as HTMLElement), visible.length, e.shiftKey);
+    e.preventDefault();
+    visible[next]!.focus();
   };
 
   return (

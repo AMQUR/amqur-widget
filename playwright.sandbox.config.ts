@@ -7,9 +7,13 @@ import { defineConfig } from '@playwright/test';
  */
 const PORT = Number(process.env.SANDBOX_PORT || 18090);
 
+/** Default Chromium (what CI runs). SANDBOX_BROWSER=firefox|webkit reruns the suite in another engine. */
+const BROWSER = (['chromium', 'firefox', 'webkit'] as const).find((b) => b === process.env.SANDBOX_BROWSER) ?? 'chromium';
+
 const viewport = (name: string, width: number, height: number, mobile = false) => ({
   name,
-  use: { browserName: 'chromium' as const, viewport: { width, height }, hasTouch: mobile, isMobile: mobile, deviceScaleFactor: mobile ? 2 : 1 },
+  // Firefox has no mobile emulation: it gets the phone viewport and touch, without isMobile.
+  use: { browserName: BROWSER, viewport: { width, height }, hasTouch: mobile, ...(BROWSER === 'firefox' ? {} : { isMobile: mobile }), deviceScaleFactor: mobile ? 2 : 1 },
 });
 
 export default defineConfig({

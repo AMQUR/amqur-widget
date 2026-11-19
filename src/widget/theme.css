@@ -602,7 +602,9 @@
 /* Composer */
 .amq-composer { padding: 10px 12px; gap: 8px; align-items: center; }
 .amq-composer textarea { border-radius: 14px; min-height: 44px; background: #f7f7f5; }
-.amq-send { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; }
+/* Fixed basis and a shrinkable text box: at 320px Firefox otherwise squeezes the button to 24px. */
+.amq-composer textarea { min-width: 0; }
+.amq-send { flex: 0 0 44px; width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; }
 .amq-lang { position: static; flex: 0 0 auto; min-width: 44px; height: 44px; border-radius: 14px; border: 1px solid var(--amqur-border); background: var(--amqur-surface); font-size: 12px; font-weight: 700; letter-spacing: .04em; padding: 0 8px; color: var(--amqur-text); cursor: pointer; }
 
 @media (max-width: 480px) {
