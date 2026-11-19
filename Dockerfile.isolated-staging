@@ -30,7 +30,8 @@ RUN test "$AMQUR_WIDGET_BUILD_PROFILE" = "isolated-staging" \
     "  \"buildTime\": \"${APP_BUILD_TIME}\"," \
     "  \"releaseId\": \"${APP_RELEASE_ID}\"" \
     '}' > /out/version.json \
-  && grep -q 'STAGING — NOT FOR CUSTOMERS' /out/index.html \
+  && grep -q 'Isolated Staging Canary' /out/index.html \
+  && grep -q 'data-amqur-isolated-build=' /out/index.html \
   && grep -q 'backend-staging-staging-b699.up.railway.app' /out/embed-manifest.json \
   && ! grep -q 'https://api.dialusnow.com' /out/index.html \
   && ! grep -q 'staging-api.dialusnow.com\|api.dialusnow.com\|widget.dialusnow.com' /out/embed.js \
