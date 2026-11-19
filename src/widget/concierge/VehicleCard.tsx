@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Lang, Vehicle } from './types';
 import { c, money } from './copy';
-import { ChevronIcon, VehicleSilhouette } from '../icons';
+import { ChevronIcon, MoreIcon, VehicleSilhouette } from '../icons';
 
 /** Feed photo with a skeleton while loading; any failure falls back to the neutral placeholder. */
 function VehiclePhoto({ src, alt, lang }: { src?: string; alt: string; lang: Lang }) {
@@ -100,8 +100,8 @@ export function VehicleCard(props: {
                             {c(lang, 'payment')}
                         </button>
                     )}
-                    <button type="button" className="amq-btn amq-btn--ghost amq-btn--icon" aria-expanded={more} aria-label="More actions" onClick={() => setMore((m) => !m)}>
-                        <span aria-hidden>⋯</span>
+                    <button type="button" className="amq-btn amq-btn--ghost amq-btn--icon" aria-expanded={more} aria-label={c(lang, 'moreActions')} onClick={() => setMore((m) => !m)}>
+                        <MoreIcon />
                     </button>
                 </div>
                 {more && (
