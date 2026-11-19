@@ -52,6 +52,7 @@ export function useConcierge(opts: { lang: Lang; pageContext: PageContext; saved
     const [language, setLanguage] = useState<Lang>(opts.lang);
     const [savedVins, setSavedVins] = useState<string[]>([]);
     const [lastFailed, setLastFailed] = useState<{ text: string; options?: SendOptions } | null>(null);
+    const [quickReplies, setQuickReplies] = useState<string[]>([]);
     const liveCursor = useRef<string>(new Date().toISOString());
     const reduced = useRef(prefersReducedMotion());
     const pageContextSent = useRef(false);
@@ -77,6 +78,9 @@ export function useConcierge(opts: { lang: Lang; pageContext: PageContext; saved
             if ((!trimmed && !options.action) || busy) return;
             setBusy(true);
             setLastFailed(null);
+            setQuickReplies([]);
+            // Drop orphaned error bubbles once the customer sends again successfully later.
+            setMessages((prev) => prev.filter((m) => !(m.role === 'assistant' && m.isError)));
             if (trimmed || options.display) push({ id: uid(), role: 'user', text: options.display ?? trimmed, at: Date.now() });
             if (!aiPaused) setTyping(true);
             const started = performance.now();
@@ -98,6 +102,7 @@ export function useConcierge(opts: { lang: Lang; pageContext: PageContext; saved
                 if (res.conversation.language && res.conversation.language !== language) setLanguage(res.conversation.language);
                 if (res.type === 'staff_handling') {
                     setTyping(false);
+                    setQuickReplies([]);
                     return;
                 }
                 const wait = presentationDelayMs({
@@ -130,8 +135,10 @@ export function useConcierge(opts: { lang: Lang; pageContext: PageContext; saved
                     if (!last) await sleep(segmentGapMs(segments[i + 1], reduced.current));
                 }
                 setJourney(res.journey ?? {});
+                setQuickReplies(Array.isArray(res.quickReplies) ? res.quickReplies.slice(0, 6) : []);
             } catch (e) {
                 setLastFailed({ text: trimmed, options });
+                setQuickReplies([]);
                 push({
                     id: uid(),
                     role: 'assistant',
@@ -207,5 +214,5 @@ export function useConcierge(opts: { lang: Lang; pageContext: PageContext; saved
         void send(lastFailed.text, lastFailed.options);
     }, [lastFailed, send]);
 
-    return { messages, typing, busy, journey, handoffState, aiPaused, language, setLanguage, savedVins, toggleSaved, send, retry, canRetry: !!lastFailed };
+    return { messages, typing, busy, journey, handoffState, aiPaused, language, setLanguage, savedVins, toggleSaved, send, retry, canRetry: !!lastFailed, quickReplies };
 }

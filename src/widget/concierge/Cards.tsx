@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import type { Card, Lang } from './types';
 import { c, money } from './copy';
 import { normalizeApiBaseUrl } from '../../connect';
-import { ExternalIcon, LockIcon } from '../icons';
+import { CaretIcon, ExternalIcon, LockIcon } from '../icons';
 
 /** Collapsible details — keeps ONE short disclosure visible and the full terms one tap away. */
 function Details({ label, children }: { label: string; children: ReactNode }) {
@@ -14,7 +14,7 @@ function Details({ label, children }: { label: string; children: ReactNode }) {
             <button type="button" className="amq-linkbtn" aria-expanded={open} aria-controls={id} onClick={() => setOpen((o) => !o)}>
                 {label}
                 <span aria-hidden className={`amq-caret${open ? ' amq-caret--open' : ''}`}>
-                    ▾
+                    <CaretIcon />
                 </span>
             </button>
             {open && (
@@ -196,9 +196,19 @@ export function CardView({ card, lang, apiBaseUrl }: { card: Card; lang: Lang; a
             );
         case 'hours':
             return (
-                <section className="amq-card" aria-label="Hours">
+                <section className="amq-card" aria-label={c(lang, 'hours')}>
                     {card.openNow != null && <span className={`amq-chip amq-chip--${card.openNow ? 'ok' : 'neutral'}`}>{card.openNow ? c(lang, 'openNow') : c(lang, 'closedNow')}</span>}
                     <div className="amq-small">{card.summary}</div>
+                </section>
+            );
+        case 'finance_request':
+            return (
+                <section className="amq-card" role="status" aria-label={c(lang, 'financeRequestTitle')}>
+                    <header>
+                        <span className="amq-card__eyebrow">{c(lang, 'financeRequestTitle')}</span>
+                        <span className="amq-chip amq-chip--neutral">{c(lang, 'requested')}</span>
+                    </header>
+                    <p className="amq-muted amq-small">{c(lang, 'financeRequestNote')}</p>
                 </section>
             );
         default:
