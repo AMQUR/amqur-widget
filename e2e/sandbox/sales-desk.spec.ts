@@ -316,6 +316,16 @@ test.describe('host isolation and theming', () => {
         await shot(page, '14-neutral-theme');
     });
 
+    test('host page can move the launcher clear of its own sticky UI with a custom property', async ({ page }) => {
+        await page.goto('/?tenant=jeep-of-chicago&theme=showroom');
+        const launcher = page.getByRole('button', { name: 'Open assistant' });
+        await expect(launcher).toBeVisible();
+        const before = await launcher.boundingBox();
+        await page.addStyleTag({ content: '#amqur-widget-host { --amqur-launcher-bottom: 120px; }' });
+        const after = await launcher.boundingBox();
+        expect(before!.y - after!.y).toBeGreaterThan(90);
+    });
+
     test('a failed boot is invisible to shoppers', async ({ page }) => {
         const errors: string[] = [];
         page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));

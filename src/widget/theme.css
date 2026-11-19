@@ -735,3 +735,13 @@
 .amq-gallery__btn { background: transparent; }
 .amq-gallery__btn svg { width: 30px; height: 30px; padding: 6px; border-radius: 999px; background: rgba(16, 17, 19, 0.72); }
 .amq-gallery__btn:disabled { opacity: 0; }
+
+/*
+ * Host-tunable launcher position. Custom properties are the one thing a host page may pass
+ * through the shadow boundary: set them on #amqur-widget-host to clear a sticky footer or
+ * mobile action bar. Unset, the defaults above apply.
+ */
+.amqur-portal { right: var(--amqur-launcher-right, 24px); bottom: var(--amqur-launcher-bottom, 24px); }
+@media (max-width: 480px) {
+    .amqur-portal { right: var(--amqur-launcher-right, 12px); bottom: var(--amqur-launcher-bottom, 12px); }
+}
