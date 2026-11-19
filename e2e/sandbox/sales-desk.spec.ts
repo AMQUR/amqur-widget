@@ -182,6 +182,37 @@ test.describe('Showroom theme — sales journey', () => {
         expect(stored).not.toMatch(/312-555-0142|3125550142|Tester/);
     });
 
+    test('a failed lead submission is never shown as sent; the form keeps its values for another try', async ({ page }) => {
+        await open(page, 'tenant=dial-chevy-of-chicago&theme=showroom');
+        await say(page, 'book a test drive');
+        await settled(page);
+        const form = page.getByRole('form', { name: /Dial Chevy of Chicago/ });
+        await form.getByLabel('First name').fill('Sandbox');
+        await form.getByLabel('Last name').fill('Tester');
+        await form.getByRole('textbox', { name: 'Email' }).fill('sandbox.tester@example.invalid');
+        await form.getByLabel('Email me about this request.').check();
+
+        let failed = false;
+        await page.route('**/api/chat/stream', async (route) => {
+            if (!failed && (route.request().postData() ?? '').includes('"lead"')) {
+                failed = true;
+                return route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"unavailable"}' });
+            }
+            return route.fallback();
+        });
+        await form.getByRole('button', { name: 'Send to the team' }).click();
+        await expect(page.getByText(/couldn't send that\. Nothing was saved/)).toBeVisible();
+        // No automatic retry of a contact submission, and nothing claims it was sent.
+        await expect(page.getByRole('button', { name: 'Retry' })).toHaveCount(0);
+        await expect(form.getByLabel('First name')).toHaveValue('Sandbox');
+        await expect(form.getByRole('button', { name: 'Send to the team' })).toBeEnabled();
+
+        await form.getByRole('button', { name: 'Send to the team' }).click();
+        await settled(page);
+        await expect(page.getByText(/Your request is with Dial Chevy of Chicago/)).toBeVisible();
+        await expect(page.getByRole('form')).toHaveCount(0);
+    });
+
     test('service: external scheduler link books nothing here; safety complaint escalates', async ({ page }) => {
         await open(page, 'tenant=dial-nissan-of-chicago&theme=showroom');
         await say(page, 'Can I book brakes for Friday?');

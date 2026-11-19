@@ -8,7 +8,8 @@ import { CHANNEL_LABEL, phoneDigits, validateLead, type LeadErrors as Errors } f
  * Contact capture, shown only once the customer has asked for something that needs a follow-up.
  * - Asks for the minimum: a name and one way to reach them.
  * - Consent is per channel, unticked by default, and uses the server's versioned wording.
- * - Nothing typed here is written to browser storage; it is sent once and then cleared.
+ * - Nothing typed here is written to browser storage. The form is removed only after the
+ *   server accepts the submission; if the request fails it stays so nothing has to be retyped.
  */
 export function LeadForm(props: {
     card: LeadFormCard;
@@ -26,19 +27,9 @@ export function LeadForm(props: {
     const [channel, setChannel] = useState<ContactChannel>(channels[0]!);
     const [consents, setConsents] = useState<Partial<Record<ContactChannel, boolean>>>({});
     const [errors, setErrors] = useState<Errors>({});
-    const [sent, setSent] = useState<ContactChannel | null>(null);
     const formRef = useRef<HTMLFormElement | null>(null);
 
     const title = card.rooftopName ? c(lang, 'leadTitle', { name: card.rooftopName }) : c(lang, 'leadTitleGeneric');
-
-    if (sent) {
-        return (
-            <section className="amq-card" role="status" aria-label={title}>
-                <div className="amq-card__title">{title}</div>
-                <p className="amq-muted amq-small">{c(lang, 'leadSentNote', { channel: c(lang, CHANNEL_LABEL[sent]).toLowerCase() })}</p>
-            </section>
-        );
-    }
 
     const submit = (ev: FormEvent) => {
         ev.preventDefault();
@@ -59,12 +50,8 @@ export function LeadForm(props: {
             preferredChannel: channel,
             consents: channels.map((ch) => ({ channel: ch, granted: consents[ch] === true, version: card.consent.version })),
         };
-        setSent(channel);
-        // Clear local copies immediately; the submission lives only in the request.
-        setFirstName('');
-        setLastName('');
-        setEmail('');
-        setPhone('');
+        // Nothing is marked as sent here: the form stays (disabled while in flight) until the
+        // server accepts the turn, and stays usable if the request fails.
         props.onSubmit(lead);
     };
 

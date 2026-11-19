@@ -22,7 +22,6 @@ export function AppointmentPicker(props: {
     const { card, lang } = props;
     const uid = useId();
     const [open, setOpen] = useState(false);
-    const [done, setDone] = useState(false);
     const [slotId, setSlotId] = useState<string | null>(null);
     const [day, setDay] = useState<string | null>(null);
     const [windowOfDay, setWindowOfDay] = useState<AppointmentWindow | null>(null);
@@ -71,15 +70,6 @@ export function AppointmentPicker(props: {
         );
     }
 
-    if (done) {
-        return (
-            <section className="amq-card" role="status" aria-labelledby={`${uid}-title`}>
-                {heading}
-                <p className="amq-muted amq-small">{card.mode === 'provider_slots' ? c(lang, 'pickProviderNote') : c(lang, 'pickRequestNote')}</p>
-            </section>
-        );
-    }
-
     const canSubmit = card.mode === 'provider_slots' ? !!slotId : !!day && !!windowOfDay;
     const submit = () => {
         if (!canSubmit || props.disabled) return;
@@ -93,7 +83,8 @@ export function AppointmentPicker(props: {
                 c(lang, 'apptRequestDisplay', { d: formatDay(day!, lang), w: c(lang, windowOfDay!).toLowerCase() }),
             );
         }
-        setDone(true);
+        // Close the sheet only. The card is replaced by the server's answer (a receipt, or a
+        // fresh picker if the time was lost); it never claims an outcome on its own.
         setOpen(false);
     };
 
