@@ -1,6 +1,6 @@
 # Isolated staging widget build
 
-Use `Dockerfile.staging` with the build argument `AMQUR_WIDGET_BUILD_PROFILE=isolated-staging`. The default profile retains the canonical staging build. Confirm the build log names `Dockerfile.staging` because the root `railway.toml` selects the production `Dockerfile`. Set release identity from the reviewed widget commit and compare `/version.json` and `/embed-manifest.json` with that commit after deployment.
+Use `Dockerfile.isolated-staging` for the isolated Railway canary host. That file hard-codes `AMQUR_WIDGET_BUILD_PROFILE=isolated-staging` and copies `staging/public/index.isolated.html` so Railway cannot silently fall back to the shared `staging-api.dialusnow.com` profile. Keep `Dockerfile.staging` for the canonical shared staging release candidate. Confirm the build log names `Dockerfile.isolated-staging` (override `railway.toml` `dockerfilePath` for the widget-staging service). Set release identity from the reviewed widget commit and compare `/version.json` and `/embed-manifest.json` with that commit after deployment.
 
 The isolated profile pins the loader, internal canary page and invite redemption to the existing `amqur-platform-staging/staging` hosts.
 
