@@ -10,15 +10,19 @@ ARG APP_COMMIT_SHA=unknown
 ARG APP_BUILD_TIME=unknown
 ARG APP_RELEASE_ID=unknown
 ARG APP_RELEASE_VERSION=0.2.0
+ARG AMQUR_WIDGET_BUILD_PROFILE=staging
 RUN npm run build \
   && mkdir -p /out \
   && cp dist/assistant-widget.iife.js /out/assistant-widget.iife.js \
   && mkdir -p /out/assets/fonts && cp -R dist/assets/fonts/. /out/assets/fonts/ \
   && cp dist/assistant-widget.iife.js /out/amqur-widget.iife.js \
-  && cp staging/public/index.html /out/index.html \
-  && cp staging/public/amqur-canary-loader.js /out/amqur-canary-loader.js \
-  && cp staging/public/canary-redeem.html /out/canary-redeem.html \
-  && node scripts/build-embed-loader.mjs --env staging --out /out \
+  && case "$AMQUR_WIDGET_BUILD_PROFILE" in \
+    staging) cp staging/public/index.html staging/public/amqur-canary-loader.js staging/public/canary-redeem.html /out/ \
+      && grep -q 'https://staging-api.dialusnow.com' /out/index.html ;; \
+    isolated-staging) test ! -e /out/amqur-canary-loader.js ;; \
+    *) exit 2 ;; \
+  esac \
+  && node scripts/build-embed-loader.mjs --env "$AMQUR_WIDGET_BUILD_PROFILE" --out /out \
   && printf '%s\n' \
     '{' \
     '  "name": "amqur-widget",' \
@@ -28,10 +32,7 @@ RUN npm run build \
     "  \"releaseId\": \"${APP_RELEASE_ID}\"" \
     '}' > /out/version.json \
   && grep -q 'STAGING — NOT FOR CUSTOMERS' /out/index.html \
-  && grep -q 'staging-api.dialusnow.com' /out/index.html \
   && ! grep -q 'https://api.dialusnow.com' /out/index.html \
-  && ! grep -q 'backend-staging-staging-b699' /out/index.html \
-  && grep -q 'https://staging-api.dialusnow.com' /out/embed.js \
   && ! grep -q 'https://api.dialusnow.com\|https://widget.dialusnow.com' /out/embed.js
 
 FROM nginx:alpine

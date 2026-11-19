@@ -5,7 +5,7 @@
  * Source: src/loaders/embed-loader.js (placeholders RELEASE_SHA, BUILD_TIME)
  * Output: <out>/embed.js, <out>/embed-manifest.json (default out: cdn/public)
  *
- * Usage: node scripts/build-embed-loader.mjs [--env production|staging|local] [--out <dir>]
+ * Usage: node scripts/build-embed-loader.mjs [--env production|staging|isolated-staging|local] [--out <dir>]
  *        local only: [--widget-host http://127.0.0.1:<port>] [--api-host http://127.0.0.1:<port>]
  *
  * `--env local` builds a loader for a developer machine or a protected test run. Its hosts must
@@ -35,6 +35,10 @@ const HOSTS = {
   staging: {
     widgetHost: 'https://staging-widget.dialusnow.com',
     apiHost: 'https://staging-api.dialusnow.com',
+  },
+  'isolated-staging': {
+    widgetHost: 'https://widget-staging-staging.up.railway.app',
+    apiHost: 'https://backend-staging-staging-b699.up.railway.app',
   },
   local: {
     widgetHost: 'http://127.0.0.1:4174',
@@ -66,7 +70,7 @@ function argValue(name) {
 
 const targetEnv = argValue('--env') ?? 'production';
 if (!Object.hasOwn(HOSTS, targetEnv)) {
-  console.error(`unknown --env "${targetEnv}" (production|staging|local)`);
+  console.error(`unknown --env "${targetEnv}" (production|staging|isolated-staging|local)`);
   process.exit(2);
 }
 const hosts = { ...HOSTS[targetEnv] };
@@ -80,9 +84,15 @@ if (targetEnv === 'local') {
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sourcePath = resolve(root, 'src/loaders/embed-loader.js');
-const outDir = resolve(root, argValue('--out') ?? (targetEnv === 'local' ? 'dist-local' : 'cdn/public'));
-if (targetEnv === 'local' && (outDir === resolve(root, 'cdn/public') || outDir.startsWith(resolve(root, 'cdn') + '/'))) {
-  console.error('a local loader must never be written into the CDN directory');
+const isolated = targetEnv === 'isolated-staging';
+const output = argValue('--out');
+if (isolated && !output) {
+  console.error('isolated-staging requires an explicit --out directory');
+  process.exit(2);
+}
+const outDir = resolve(root, output ?? (targetEnv === 'local' ? 'dist-local' : 'cdn/public'));
+if ((isolated || targetEnv === 'local') && (outDir === resolve(root, 'cdn') || outDir.startsWith(resolve(root, 'cdn') + '/'))) {
+  console.error(`${targetEnv} artifacts must never be written into the CDN directory`);
   process.exit(2);
 }
 const embedOut = resolve(outDir, 'embed.js');
@@ -152,8 +162,8 @@ let stamped = source
   .replaceAll('RELEASE_SHA', commitSha)
   .replaceAll('BUILD_TIME', buildTime);
 
-if (targetEnv === 'staging' || targetEnv === 'local') {
-  const label = targetEnv === 'staging' ? 'STAGING' : 'LOCAL TEST';
+if (targetEnv !== 'production') {
+  const label = targetEnv === 'local' ? 'LOCAL TEST' : targetEnv.toUpperCase();
   stamped = stamped
     .replace(`'${prod.widgetHost}'`, `'${hosts.widgetHost}'`)
     .replace(`'${prod.apiHost}'`, `'${hosts.apiHost}'`)
@@ -174,12 +184,31 @@ if (targetEnv === 'staging' || targetEnv === 'local') {
     console.error('embed environment marker was not stamped');
     process.exit(1);
   }
-} else if (/staging-widget|staging-api|localhost|127\.0\.0\.1/i.test(stamped)) {
+} else if (/staging-widget|staging-api|\.up\.railway\.app|localhost|127\.0\.0\.1/i.test(stamped)) {
   console.error('production embed references a non-production host');
   process.exit(1);
 }
 
 mkdirSync(outDir, { recursive: true });
+if (isolated) {
+  const index = readFileSync(resolve(root, 'staging/public/index.html'), 'utf8')
+    .replaceAll(HOSTS.staging.apiHost, hosts.apiHost);
+  const redeem = readFileSync(resolve(root, 'staging/public/canary-redeem.html'), 'utf8')
+    .replace(/<label for="api">[\s\S]*?<label for="token">/, '<label for="token">')
+    .replace("document.getElementById('api').value.replace(/\\/$/, '')", JSON.stringify(hosts.apiHost))
+    .replace(/<p class="note">[\s\S]*?<\/p>/, '<p class="note">After redeeming, use the protected isolated staging preview with synthetic data.</p>');
+  for (const page of [index, redeem]) {
+    if (!page.includes(hosts.apiHost) || [prod.apiHost, prod.widgetHost, HOSTS.staging.apiHost, HOSTS.staging.widgetHost].some((host) => page.includes(host))) {
+      throw new Error('isolated staging page does not use the isolated hosts');
+    }
+  }
+  if (redeem.includes('id="api"') || redeem.includes("getElementById('api')")) {
+    throw new Error('isolated staging redemption page still reads an editable API origin');
+  }
+  writeFileSync(resolve(outDir, 'index.html'), index, 'utf8');
+  writeFileSync(resolve(outDir, 'canary-redeem.html'), redeem, 'utf8');
+}
+
 writeFileSync(embedOut, stamped, 'utf8');
 
 const embedIntegrity = sha384IntegrityOpenssl(embedOut);
