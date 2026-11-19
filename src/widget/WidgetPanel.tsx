@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { ChatView } from './ChatView';
-import { CloseIcon, NewChatIcon } from './icons';
+import { CloseIcon, NewChatIcon, PhoneIcon } from './icons';
 import { t, type Locale } from './i18n';
 import { useWidget } from './WidgetContext';
 import { c } from './concierge/copy';
@@ -67,6 +67,9 @@ export function WidgetPanel({
     (typeof branding?.logoAlt === 'string' && branding.logoAlt.trim()) ||
     `${locationName} logo`;
   const chatEnabled = features?.chat === true;
+  // tel: link only for a clean number supplied by the server's store config.
+  const phoneDigits = typeof branding?.phone === 'string' ? branding.phone.replace(/[^\d+]/g, '') : '';
+  const callHref = phoneDigits.replace(/\D/g, '').length >= 10 ? `tel:${phoneDigits}` : null;
   const [store, setStore] = useState<StoreStatus>({ known: false });
   useEffect(() => {
     if (!open) return;
@@ -139,11 +142,12 @@ export function WidgetPanel({
       className="amqur-panel"
       role="dialog"
       aria-modal="true"
-      aria-label={`${locationName} assistant`}
+      aria-label={`${locationName} — ${c(lang, 'aiAssistant')}`}
       onKeyDown={onPanelKeyDown}
     >
       <header className="amqur-header amq-header">
         <div className="amq-header__brand">
+          <span className="amq-storebar" aria-hidden />
           {logoUrl ? (
             <img src={logoUrl} alt={logoAlt} className="amq-header__logo" />
           ) : (
@@ -161,6 +165,11 @@ export function WidgetPanel({
             {team && <span className="amq-header__team">{team}</span>}
           </div>
         </div>
+        {callHref && (
+          <a className="amqur-iconbtn amq-header__call" href={callHref} aria-label={c(lang, 'callStore', { name: locationName })} title={branding?.phone ?? undefined}>
+            <PhoneIcon />
+          </a>
+        )}
         <button
           className="amqur-iconbtn amq-new"
           onClick={requestNewConversation}

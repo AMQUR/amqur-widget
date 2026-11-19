@@ -7,12 +7,22 @@ import {
 import { WidgetProvider } from "./widget/WidgetContext";
 import { WidgetRoot } from "./widget/WidgetRoot";
 import themeCss from "./widget/theme.css?inline";
+import showroomCss from "./widget/theme-showroom.css?inline";
+import { getWidgetBootstrap } from "./connect";
+import { assetBaseFromScript, ensureShowroomFont, resolveTheme } from "./widget/theme";
 import type { AmqurWidgetConfig } from "./widget/types";
+
+/** Captured while the bundle is executing; null when loaded in a way that hides the script. */
+const ASSET_BASE = assetBaseFromScript(
+  typeof document !== "undefined" ? document.currentScript : null,
+);
 
 export const AMQUR_WIDGET_VERSION = "0.2.0";
 
 let reactRoot: Root | null = null;
 let bootstrapped = false;
+/** In-flight init. A second init() while one is pending joins it instead of racing it. */
+let initializing: Promise<void> | null = null;
 
 function disposeReact(): void {
   reactRoot?.unmount();
@@ -26,15 +36,19 @@ function cleanupHost(): void {
   resetWidgetRuntime();
 }
 
-function mount(host: HTMLElement) {
+function mount(host: HTMLElement, options: AmqurInitOptions) {
   const shadow = host.attachShadow({ mode: "open" });
 
+  const theme = resolveTheme(getWidgetBootstrap().branding?.theme, options.theme);
+  if (theme === "showroom") ensureShowroomFont(ASSET_BASE);
+
   const style = document.createElement("style");
-  style.textContent = themeCss;
+  style.textContent = theme === "showroom" ? `${themeCss}\n${showroomCss}` : themeCss;
   shadow.appendChild(style);
 
   const mountNode = document.createElement("div");
   mountNode.className = "amqur";
+  mountNode.dataset.theme = theme;
   shadow.appendChild(mountNode);
 
   reactRoot = createRoot(mountNode);
@@ -45,32 +59,46 @@ function mount(host: HTMLElement) {
   );
 }
 
-function showFatalError(host: HTMLElement, message: string) {
-  const shadow = host.attachShadow({ mode: "open" });
-  const style = document.createElement("style");
-  style.textContent =
-    ":host{display:block;font-family:system-ui,sans-serif;font-size:14px;padding:12px;max-width:320px;border-radius:12px;background:#fee;color:#400;border:1px solid #f88;}";
-  shadow.appendChild(style);
-  const p = document.createElement("div");
-  p.textContent = message;
-  shadow.appendChild(p);
-}
-
 export type AmqurInitOptions = AmqurWidgetConfig;
 
-function appendErrorHost(message: string): void {
+const DEBUG =
+  typeof window !== "undefined" &&
+  (window as Window & { __AMQUR_DEBUG__?: boolean }).__AMQUR_DEBUG__ === true;
+
+/**
+ * A failed boot must be invisible to shoppers: no launcher, no error box, nothing that could
+ * expose server text on a dealer page. Operators get a short console line; the on-page panel
+ * exists only when the integrator opts in with window.__AMQUR_DEBUG__ = true.
+ */
+function reportBootFailure(message: string): void {
   cleanupHost();
+  if (!DEBUG) return;
   const host = document.createElement("div");
   host.id = "amqur-widget-host";
   document.body.appendChild(host);
-  showFatalError(host, message);
+  const shadow = host.attachShadow({ mode: "open" });
+  const style = document.createElement("style");
+  style.textContent =
+    ":host{display:block;position:fixed;right:16px;bottom:16px;z-index:2147483000;font-family:system-ui,sans-serif;font-size:13px;padding:12px;max-width:320px;background:#fff;color:#400;border:1px solid #c00;}";
+  shadow.appendChild(style);
+  const p = document.createElement("div");
+  p.textContent = `AMQUR debug: ${message.slice(0, 300)}`;
+  shadow.appendChild(p);
 }
 
-async function bootstrap(options: AmqurInitOptions) {
+function bootstrap(options: AmqurInitOptions): Promise<void> {
   if (bootstrapped) {
     console.warn("[AMQUR] init() called more than once; call destroy() first.");
-    return;
+    return Promise.resolve();
   }
+  if (initializing) return initializing;
+  initializing = runBootstrap(options).finally(() => {
+    initializing = null;
+  });
+  return initializing;
+}
+
+async function runBootstrap(options: AmqurInitOptions) {
 
   try {
     assertValidInitConfig(options);
@@ -78,7 +106,7 @@ async function bootstrap(options: AmqurInitOptions) {
     const msg =
       e instanceof Error ? e.message : "Invalid tenant or location configuration";
     console.error("[AMQUR] Invalid init options:", msg);
-    appendErrorHost(msg);
+    reportBootFailure(msg);
     return;
   }
 
@@ -90,14 +118,15 @@ async function bootstrap(options: AmqurInitOptions) {
 
   try {
     await initConnection(options);
-    mount(host);
+    mount(host, options);
     bootstrapped = true;
   } catch (e) {
     const msg =
       e instanceof Error ? e.message : "AMQUR failed to initialize.";
-    console.error("[AMQUR] Bootstrap failed:", e);
+    // Short, PII-free line for operators; full detail only in debug mode.
+    console.error("[AMQUR] widget did not start", DEBUG ? e : { reason: msg.slice(0, 120) });
     host.remove();
-    appendErrorHost(msg);
+    reportBootFailure(msg);
   }
 }
 

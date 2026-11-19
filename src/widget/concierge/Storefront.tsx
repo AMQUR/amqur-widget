@@ -9,7 +9,8 @@ export function Storefront(props: {
     welcome: string;
     pageContext: PageContext;
     departments: { sales: boolean; service: boolean; parts: boolean };
-    onPick: (action: 'sales' | 'service' | 'parts' | 'vdp') => void;
+    canAskForPerson?: boolean;
+    onPick: (action: 'sales' | 'service' | 'parts' | 'vdp' | 'human') => void;
 }) {
     const [status, setStatus] = useState<StoreStatus>({ known: false });
     const [spots, setSpots] = useState<Spotlight[]>([]);
@@ -68,6 +69,11 @@ export function Storefront(props: {
                     </button>
                 )}
             </div>
+            {props.canAskForPerson && (
+                <button type="button" className="amq-linkbtn" onClick={() => props.onPick('human')}>
+                    {c(props.lang, 'talkToPerson')}
+                </button>
+            )}
         </div>
     );
 }

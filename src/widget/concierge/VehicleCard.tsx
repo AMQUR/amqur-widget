@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Lang, Vehicle } from './types';
 import { c, money } from './copy';
-import { ChevronIcon, MoreIcon, VehicleSilhouette } from '../icons';
+import { ChevronIcon, ExternalIcon, MoreIcon, VehicleSilhouette } from '../icons';
 
 /** Feed photo with a skeleton while loading; any failure falls back to the neutral placeholder. */
 function VehiclePhoto({ src, alt, lang }: { src?: string; alt: string; lang: Lang }) {
@@ -26,6 +26,34 @@ function VehiclePhoto({ src, alt, lang }: { src?: string; alt: string; lang: Lan
                 onError={() => setState('error')}
                 style={state === 'loading' ? { opacity: 0 } : undefined}
             />
+        </>
+    );
+}
+
+const httpsOnly = (url?: string | null) => (typeof url === 'string' && /^https:\/\//i.test(url) ? url : null);
+
+/** Feed photos, one at a time, with labelled previous/next controls. No autoplay. */
+function VehicleGallery({ photos, alt, lang }: { photos: string[]; alt: string; lang: Lang }) {
+    const list = photos.filter((u) => httpsOnly(u) || u.startsWith('/') || u.startsWith('http://localhost') || u.startsWith('http://127.0.0.1')).slice(0, 12);
+    const [i, setI] = useState(0);
+    const n = list.length;
+    const at = Math.min(i, Math.max(0, n - 1));
+    return (
+        <>
+            <VehiclePhoto key={list[at] ?? 'none'} src={list[at]} alt={n > 1 ? `${alt} — ${c(lang, 'photoOf', { i: at + 1, n })}` : alt} lang={lang} />
+            {n > 1 && (
+                <div className="amq-gallery">
+                    <button type="button" className="amq-gallery__btn" aria-label={c(lang, 'prevPhoto')} disabled={at === 0} onClick={() => setI(at - 1)}>
+                        <ChevronIcon dir="left" />
+                    </button>
+                    <span className="amq-gallery__count" aria-live="polite">
+                        {at + 1}/{n}
+                    </span>
+                    <button type="button" className="amq-gallery__btn" aria-label={c(lang, 'nextPhoto')} disabled={at >= n - 1} onClick={() => setI(at + 1)}>
+                        <ChevronIcon dir="right" />
+                    </button>
+                </div>
+            )}
         </>
     );
 }
@@ -62,7 +90,7 @@ export function VehicleCard(props: {
     return (
         <article className="amq-vcard" aria-label={`${title}${v.trim ? ` ${v.trim}` : ''}${v.simulated ? ` — ${c(lang, 'simulatedNote')}` : ''}`}>
             <div className="amq-vcard__media">
-                <VehiclePhoto src={v.photos?.[0]} alt={`${title} ${v.trim ?? ''}`.trim()} lang={lang} />
+                <VehicleGallery photos={v.photos ?? []} alt={`${title} ${v.trim ?? ''}`.trim()} lang={lang} />
                 <div className="amq-vcard__badges">
                     {v.simulated && <span className="amq-chip amq-chip--demo">{c(lang, 'simulated')}</span>}
                     {v.status === 'IN_TRANSIT' && <span className="amq-chip amq-chip--info">{c(lang, 'inTransit')}</span>}
@@ -73,24 +101,37 @@ export function VehicleCard(props: {
                     <strong>{title}</strong>
                     {v.trim && <span className="amq-vcard__trim">{v.trim}</span>}
                 </div>
+                {v.rooftopName && <div className="amq-vcard__store">{c(lang, 'locatedAt', { name: v.rooftopName })}</div>}
                 {meta.length > 0 && <div className="amq-vcard__meta amq-muted">{meta.join(' · ')}</div>}
                 <div className="amq-vcard__price">
                     {v.price != null && <span className="amq-price">{money(v.price, lang)}</span>}
                     {v.msrp != null && v.price != null && v.msrp > v.price && <span className="amq-muted amq-strike">MSRP {money(v.msrp, lang)}</span>}
                 </div>
+                {v.price != null && v.priceIncludesDealerFees != null && (
+                    <div className="amq-muted amq-small">{v.priceIncludesDealerFees ? c(lang, 'feesIncluded') : c(lang, 'feesExtra')}</div>
+                )}
                 {props.paymentsEnabled && v.estimatedPayment != null && pa && (
                     <div className="amq-vcard__est">
                         <span className="amq-vcard__estnum">{c(lang, 'estPerMonth', { m: money(v.estimatedPayment, lang) })}</span>
                         <span className="amq-muted">
-                            {pa.aprSource === 'CUSTOMER' ? c(lang, 'yourRate', { apr: pa.apr }) : c(lang, 'exampleRate', { apr: pa.apr })} · {pa.termMonths} mo ·{' '}
+                            {pa.aprSource === 'CUSTOMER' ? c(lang, 'yourRate', { apr: pa.apr }) : c(lang, 'exampleRate', { apr: pa.apr })} · {pa.termMonths} {c(lang, 'months')} ·{' '}
                             {money(pa.downPayment, lang)} down · {pa.includesTaxAndFees ? c(lang, 'inclTaxes') : c(lang, 'exclTaxes')}
                         </span>
                     </div>
                 )}
                 <div className="amq-vcard__foot amq-muted">
-                    {v.stock && <span>Stock #{v.stock}</span>}
+                    <span>
+                        {v.stock ? `Stock #${v.stock} · ` : ''}VIN {v.vin.slice(-8)}
+                    </span>
                     {stale && <span className="amq-chip amq-chip--warn">{c(lang, 'stale')}</span>}
                 </div>
+                {!stale && v.lastSeenAt && !Number.isNaN(Date.parse(v.lastSeenAt)) && (
+                    <div className="amq-muted amq-small">
+                        {c(lang, 'listingChecked', {
+                            d: new Date(v.lastSeenAt).toLocaleDateString(lang === 'es' ? 'es-US' : 'en-US', { month: 'short', day: 'numeric' }),
+                        })}
+                    </div>
+                )}
                 <div className="amq-actions">
                     <button type="button" className="amq-btn amq-btn--primary" onClick={() => props.onAsk('', { action: 'vehicle_detail', vin: v.vin, display: `${c(lang, 'details')}: ${title}` })}>
                         {c(lang, 'details')}
@@ -104,6 +145,13 @@ export function VehicleCard(props: {
                         <MoreIcon />
                     </button>
                 </div>
+                {httpsOnly(v.vdpUrl) && (
+                    <a className="amq-linkbtn" href={httpsOnly(v.vdpUrl)!} target="_blank" rel="noopener noreferrer">
+                        {c(lang, 'viewOnSite')}
+                        <ExternalIcon aria-hidden />
+                        <span className="amq-sr"> ({c(lang, 'opensDealerSite')})</span>
+                    </a>
+                )}
                 {more && (
                     <div className="amq-actions amq-actions--secondary">
                         <button type="button" className="amq-btn amq-btn--ghost" onClick={() => props.onAsk('', { action: 'test_drive', vin: v.vin, display: `${c(lang, 'testDrive')}: ${title}` })}>
@@ -154,7 +202,7 @@ export function VehicleCarousel({ count, lang, children }: { count: number; lang
             </div>
         );
     return (
-        <div className="amq-carousel" role="region" aria-roledescription="carousel" aria-label={`${count} vehicles`}>
+        <div className="amq-carousel" role="region" aria-roledescription="carousel" aria-label={c(lang, 'vehiclesFound', { n: count })}>
             <div
                 ref={ref}
                 className="amq-cards"

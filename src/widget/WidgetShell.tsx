@@ -4,6 +4,7 @@ import { WidgetPanel } from './WidgetPanel';
 import { useWidget } from './WidgetContext';
 import { detectLocale } from './i18n';
 import { c } from './concierge/copy';
+import { resolveTheme } from './theme';
 
 export function WidgetShell() {
   const [open, setOpen] = useState(false);
@@ -34,12 +35,22 @@ export function WidgetShell() {
     return () => document.removeEventListener('keydown', onKey);
   }, [open, close]);
 
+  const theme = resolveTheme(bootstrap.branding?.theme, config.theme);
+
   useEffect(() => {
     const el = portalRef.current;
     if (!el) return;
+    if (theme === 'showroom') {
+      // Showroom owns its palette (one red for actions). The tenant colour is only the
+      // thin store bar beside the store name.
+      el.style.removeProperty('--amqur-primary');
+      el.style.removeProperty('--amqur-accent');
+      el.style.setProperty('--amq-store', primary);
+      return;
+    }
     el.style.setProperty('--amqur-primary', primary);
     el.style.setProperty('--amqur-accent', accent);
-  }, [primary, accent]);
+  }, [primary, accent, theme]);
 
   // Lock host page scroll while the mobile sheet (or desktop panel) is open.
   useEffect(() => {

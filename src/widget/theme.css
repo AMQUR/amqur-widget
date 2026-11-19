@@ -611,3 +611,99 @@
 .amq-msg .amq-card p, .amq-msg p.amq-disclaimer { padding: 0; margin: 0; background: none; border: 0; border-radius: 0; box-shadow: none; font-size: 12px; line-height: 1.45; }
 .amq-msg p.amq-disclaimer { padding: 0 6px; font-size: 11.5px; }
 .amq-spotlight { border-left: 3px solid var(--amqur-primary); } .amq-storefront .amq-card p { margin: 0; }
+
+/* ───────────── Sales desk (2026-11): identity bar, gallery, forms, picker, receipts ───────────── */
+
+/* Visible keyboard focus on every control, including the two that previously had none. */
+.amqur-launcher:focus-visible { outline: 3px solid color-mix(in srgb, var(--amqur-primary) 60%, white); outline-offset: 3px; box-shadow: 0 0 0 3px #fff, var(--amqur-shadow); }
+.amqur-iconbtn:focus-visible { outline: 3px solid color-mix(in srgb, var(--amqur-primary) 60%, white); outline-offset: 1px; box-shadow: none; }
+.amq-chip--quick:focus-visible, .amq-slot:focus-visible, .amq-gallery__btn:focus-visible,
+.amq-field input:focus-visible, .amq-check input:focus-visible, .amq-radio input:focus-visible,
+.amq-body a:focus-visible, .amq-footer a:focus-visible { outline: 3px solid color-mix(in srgb, var(--amqur-primary) 60%, white); outline-offset: 2px; }
+
+/* 44px touch targets on everything a thumb has to hit. */
+.amq-btn { min-height: 44px; }
+.amq-vcard .amq-actions .amq-btn { min-height: 44px; }
+.amq-btn--icon { flex: 0 0 44px !important; width: 44px; }
+.amq-navbtn { width: 44px; height: 44px; }
+.amq-linkbtn { min-height: 44px; }
+.amq-chip--quick { min-height: 44px; padding: 0 14px; font-size: 13px; }
+.amqur-iconbtn { width: 44px; height: 44px; }
+.amq-btn:disabled, .amq-linkbtn:disabled { opacity: .55; cursor: not-allowed; }
+
+/* Header: store bar + call link */
+.amq-storebar { display: none; flex: 0 0 4px; width: 4px; align-self: stretch; min-height: 32px; background: var(--amq-store, var(--amqur-primary)); }
+.amq-header__call { text-decoration: none; flex: 0 0 44px; margin-left: auto; border: 1px solid var(--amqur-border); }
+.amq-header__call + .amq-new { margin-left: 0; }
+
+/* Human presence */
+.amq-staffbar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #1f2937; color: #fff; }
+.amq-staffbar__avatar { flex: 0 0 36px; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, 0.14); font-size: 13px; font-weight: 750; }
+.amq-staffbar__text { display: flex; flex-direction: column; min-width: 0; font-size: 12px; line-height: 1.35; }
+.amq-staffbar__text strong { font-size: 13.5px; font-weight: 680; }
+.amq-msg__who { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+.amq-msg__avatar { width: 22px; height: 22px; display: inline-grid; place-items: center; border-radius: 50%; background: var(--amqur-text); color: var(--amqur-surface); font-size: 10px; font-weight: 750; }
+.amq-msg__note { font-size: 12px; color: var(--amqur-muted); padding-left: 4px; }
+.amq-utility { display: flex; justify-content: flex-end; padding: 0 12px; }
+.amq-send--stop { background: var(--amqur-text); color: var(--amqur-surface); }
+
+/* Vehicle gallery + provenance */
+.amq-gallery { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: space-between; padding: 6px; pointer-events: none; }
+.amq-gallery__btn { pointer-events: auto; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 999px; background: rgba(16, 17, 19, 0.72); color: #fff; cursor: pointer; }
+.amq-gallery__btn:disabled { opacity: .35; cursor: default; }
+.amq-gallery__count { pointer-events: none; padding: 3px 8px; border-radius: 999px; background: rgba(16, 17, 19, 0.72); color: #fff; font-size: 11.5px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.amq-vcard__store { font-size: 12.5px; font-weight: 650; }
+.amq-vcard .amq-linkbtn { align-self: flex-start; }
+.amq-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .02em; }
+
+/* Lead form */
+.amq-form { gap: 10px; }
+.amq-form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.amq-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.amq-field label, .amq-fieldset legend { font-size: 12.5px; font-weight: 650; color: var(--amqur-text); padding: 0; }
+.amq-field input { width: 100%; min-height: 44px; padding: 8px 10px; border: 1px solid rgba(15, 20, 30, 0.32); border-radius: 10px; background: #fff; color: var(--amqur-text); font-size: 16px; line-height: 1.3; }
+.amq-field input[aria-invalid="true"] { border-color: #b3261e; border-width: 2px; }
+.amq-field__err { font-size: 12px; font-weight: 600; color: #8c1d18; }
+.amq-form__summary { margin: 0; padding: 8px 10px; background: #fdecea; color: #8c1d18; font-size: 12.5px; font-weight: 600; }
+.amq-msg .amq-card p.amq-form__summary { padding: 8px 10px; background: #fdecea; font-size: 12.5px; }
+.amq-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.amq-radios { display: flex; flex-wrap: wrap; gap: 6px; }
+.amq-radio { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid rgba(15, 20, 30, 0.32); border-radius: 10px; font-size: 13.5px; font-weight: 600; cursor: pointer; background: #fff; }
+.amq-radio:has(input:checked) { border-color: var(--amqur-text); box-shadow: inset 0 0 0 1px var(--amqur-text); }
+.amq-radio input, .amq-check input { width: 20px; height: 20px; margin: 0; flex: 0 0 20px; accent-color: var(--amqur-text); }
+.amq-check { display: flex; align-items: flex-start; gap: 10px; min-height: 44px; padding: 6px 0; font-size: 12.5px; line-height: 1.45; cursor: pointer; }
+.amq-check input { margin-top: 2px; }
+
+/* Appointment picker sheet (slides over the conversation, inside the panel) */
+.amq-sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; max-height: 86%; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 12px; padding: 14px 14px calc(14px + env(safe-area-inset-bottom)); background: var(--amqur-surface); border-top: 1px solid var(--amqur-border); border-radius: 18px 18px 0 0; box-shadow: 0 -18px 40px -20px rgba(15, 20, 35, 0.4); animation: amq-sheet-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.amq-sheet:focus { outline: none; }
+.amq-sheet__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.amq-sheet__close { flex: 0 0 44px; }
+.amq-slotgroup { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+.amq-slotgroup--times { flex-wrap: wrap; overflow: visible; }
+.amq-slot { flex: 0 0 auto; min-height: 44px; min-width: 72px; padding: 0 12px; border: 1px solid rgba(15, 20, 30, 0.32); border-radius: 10px; background: #fff; color: var(--amqur-text); font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer; }
+.amq-slot[aria-pressed="true"] { background: var(--amqur-text); border-color: var(--amqur-text); color: var(--amqur-surface); }
+@keyframes amq-sheet-in { from { transform: translateY(18px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* Receipts: a request must never look like a confirmation */
+.amq-receipt--confirmed { border-top: 4px solid #1d6b3f; }
+.amq-receipt--requested { border-style: dashed; }
+.amq-dl--receipt { grid-template-columns: auto 1fr; font-size: 13px; }
+.amq-dl--receipt dd { text-align: left; }
+
+/* Small screens: 320px must not clip */
+@media (max-width: 360px) {
+    .amq-form__row { grid-template-columns: 1fr; }
+    .amq-header { padding-left: 10px; gap: 6px; }
+    .amq-header__logo { max-width: 96px; }
+    .amq-log { padding-left: 10px; padding-right: 10px; }
+    .amq-cards { grid-auto-columns: 94%; }
+    .amq-vcard .amq-actions { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .amq-sheet { animation: none; }
+}
+@media (forced-colors: active) {
+    .amq-slot[aria-pressed="true"] { forced-color-adjust: none; background: Highlight; color: HighlightText; }
+    .amq-field input, .amq-slot, .amq-radio { border: 1px solid CanvasText; }
+}

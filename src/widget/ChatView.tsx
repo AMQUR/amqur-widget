@@ -6,7 +6,7 @@ import { loadCompareVins, MAX_COMPARE_VEHICLES, toggleCompareVin, clearCompareVi
 import { useConcierge } from './concierge/useConcierge';
 import { collectPageContext } from './concierge/pageContext';
 import { VehicleCard, VehicleCarousel } from './concierge/VehicleCard';
-import { SendIcon } from './icons';
+import { SendIcon, StopIcon } from './icons';
 import { CardView } from './concierge/Cards';
 import { JourneyTray } from './concierge/JourneyTray';
 import { Storefront } from './concierge/Storefront';
@@ -21,6 +21,11 @@ function initialLang(cfgLocale?: string, locales?: string[]): Lang {
     const nav = typeof navigator !== 'undefined' ? navigator.language?.toLowerCase() ?? '' : '';
     if (nav.startsWith('es') && (locales ?? []).includes('es')) return 'es';
     return 'en';
+}
+
+function initialsOf(name?: string | null): string {
+    const parts = (name ?? '').split(/\s+/).filter((w) => /^[A-Za-zÀ-ÿ]/.test(w));
+    return parts.slice(0, 2).map((w) => w[0]!.toUpperCase()).join('') || '•';
 }
 
 function autosize(el: HTMLTextAreaElement | null) {
@@ -95,10 +100,25 @@ export function ChatView() {
     };
 
     const showStorefront = conv.messages.length === 0;
+    // Only the newest assistant message can still be acted on; older forms are history.
+    const lastAssistantId = [...conv.messages].reverse().find((m) => m.role === 'assistant' && !m.isError)?.id;
+    const personInvolved = conv.aiPaused || ['ASSIGNED', 'JOINED'].includes(conv.handoffState);
+    const canAskForPerson = f.handoff === true && !personInvolved && !['QUEUED', 'REQUESTED'].includes(conv.handoffState);
 
     return (
         <div className="amq-chat">
             <JourneyTray journey={conv.journey} lang={lang} />
+            {personInvolved && (
+                <div className="amq-staffbar" role="status">
+                    <span className="amq-staffbar__avatar" aria-hidden>
+                        {initialsOf(conv.staff?.displayName)}
+                    </span>
+                    <span className="amq-staffbar__text">
+                        <strong>{conv.staff?.displayName ? c(lang, 'staffHere', { name: conv.staff.displayName }) : c(lang, 'staffHereAnon')}</strong>
+                        <span>{c(lang, 'aiPausedNote')}</span>
+                    </span>
+                </div>
+            )}
             <div
                 ref={logRef}
                 className="amq-log"
@@ -118,8 +138,10 @@ export function ChatView() {
                             service: (f.serviceAi === true || f.appointments === true) && bootstrap.branding?.serviceEnabled !== false,
                             parts: f.partsAi === true && bootstrap.branding?.partsEnabled !== false,
                         }}
+                        canAskForPerson={canAskForPerson}
                         onPick={(a) => {
-                            if (a === 'vdp' && pageContext.vin) void conv.send('', { action: 'vehicle_detail', vin: pageContext.vin, display: c(lang, 'welcomeVdp') });
+                            if (a === 'human') void conv.send('', { action: 'human', display: c(lang, 'talkToPerson') });
+                            else if (a === 'vdp' && pageContext.vin) void conv.send('', { action: 'vehicle_detail', vin: pageContext.vin, display: c(lang, 'welcomeVdp') });
                             else if (a !== 'vdp') void conv.send('', { action: a, display: c(lang, a) });
                         }}
                     />
@@ -130,9 +152,24 @@ export function ChatView() {
                             <p>{m.text}</p>
                         </div>
                     ) : (
-                        <div key={m.id} className={`amq-msg amq-msg--${m.author === 'staff' ? 'staff' : m.author === 'system' ? 'system' : 'ai'}${m.isError ? ' amq-msg--error' : ''}`}>
-                            {m.author === 'staff' && <span className="amq-msg__who">{m.displayName ?? c(lang, 'staff')}</span>}
+                        <div
+                            // Remount when streaming ends so assistive tech announces the finished text once,
+                            // instead of every partial chunk.
+                            key={m.streaming ? `${m.id}:live` : m.id}
+                            className={`amq-msg amq-msg--${m.author === 'staff' ? 'staff' : m.author === 'system' ? 'system' : 'ai'}${m.isError ? ' amq-msg--error' : ''}`}
+                            aria-live={m.streaming ? 'off' : undefined}
+                            aria-busy={m.streaming || undefined}
+                        >
+                            {m.author === 'staff' && (
+                                <span className="amq-msg__who">
+                                    <span className="amq-msg__avatar" aria-hidden>
+                                        {initialsOf(m.displayName)}
+                                    </span>
+                                    {m.displayName ?? c(lang, 'staff')}
+                                </span>
+                            )}
                             {m.text && <p>{m.text}</p>}
+                            {m.stopped && <span className="amq-msg__note">{c(lang, 'stopped')}</span>}
                             {m.vehicles && m.vehicles.length > 0 && (m.compare ? (
                                 <CompareTable vehicles={m.vehicles} lang={lang} />
                             ) : (
@@ -155,7 +192,20 @@ export function ChatView() {
                                     ))}
                                 </VehicleCarousel>
                             ))}
-                            {m.cards?.map((card, i) => <CardView key={`${m.id}-${i}`} card={card} lang={lang} apiBaseUrl={config.apiBaseUrl} />)}
+                            {m.cards?.map((card, i) => (
+                                <CardView
+                                    key={`${m.id}-${i}`}
+                                    card={card}
+                                    lang={lang}
+                                    apiBaseUrl={config.apiBaseUrl}
+                                    actions={{
+                                        busy: conv.busy,
+                                        interactive: m.id === lastAssistantId && online,
+                                        onLead: (lead) => void conv.send('', { action: 'lead_capture', lead, display: c(lang, 'leadSentDisplay') }),
+                                        onAppointment: (appointment, display) => void conv.send('', { action: 'appointment_select', appointment, display }),
+                                    }}
+                                />
+                            ))}
                             {/* One disclosure per message: cards and vehicle estimates carry their own. */}
                             {m.disclaimer && m.vehicles?.length && !m.vehicles.some((v) => v.estimatedPayment != null) && !m.cards?.length ? (
                                 <p className="amq-disclaimer">{m.disclaimer}</p>
@@ -169,16 +219,11 @@ export function ChatView() {
                     ),
                 )}
                 {conv.typing && (
-                    <div className="amq-typing" role="status" aria-label={c(lang, 'typingAi')}>
+                    <div className="amq-typing" role="status" aria-label={conv.status ?? c(lang, 'typingAi')}>
                         <span aria-hidden />
                         <span aria-hidden />
                         <span aria-hidden />
-                        <span className="amq-typing__label" aria-hidden>{c(lang, 'typingAi')}</span>
-                    </div>
-                )}
-                {conv.aiPaused && (
-                    <div className="amq-presence" role="status">
-                        {c(lang, 'staffTyping')}
+                        <span className="amq-typing__label" aria-hidden>{conv.status ?? c(lang, 'typingAi')}</span>
                     </div>
                 )}
             </div>
@@ -221,6 +266,19 @@ export function ChatView() {
                 </div>
             )}
 
+            {canAskForPerson && !showStorefront && (
+                <div className="amq-utility">
+                    <button
+                        type="button"
+                        className="amq-linkbtn"
+                        disabled={conv.busy || !online}
+                        onClick={() => void conv.send('', { action: 'human', display: c(lang, 'talkToPerson') })}
+                    >
+                        {c(lang, 'talkToPerson')}
+                    </button>
+                </div>
+            )}
+
             <form className="amq-composer" onSubmit={submit}>
                 {multilingual && (
                     <button
@@ -256,9 +314,15 @@ export function ChatView() {
                     disabled={!online}
                     enterKeyHint="send"
                 />
-                <button type="submit" className="amq-send" disabled={!input.trim() || conv.busy || !online} aria-label={c(lang, 'send')}>
-                    <SendIcon />
-                </button>
+                {conv.busy && !personInvolved ? (
+                    <button type="button" className="amq-send amq-send--stop" onClick={conv.stop} aria-label={c(lang, 'stop')}>
+                        <StopIcon />
+                    </button>
+                ) : (
+                    <button type="submit" className="amq-send" disabled={!input.trim() || conv.busy || !online} aria-label={c(lang, 'send')}>
+                        <SendIcon />
+                    </button>
+                )}
             </form>
             <ProactiveEngagement lang={lang} pageContext={pageContext} onAccept={(action) => void conv.send('', action)} hasConversation={conv.messages.length > 0} />
         </div>

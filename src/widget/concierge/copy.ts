@@ -128,6 +128,75 @@ const EN = {
     financeRequestTitle: 'Financing request',
     financeRequestNote: 'Logged for the finance team — not an approval or rate quote.',
     chatUnavailable: 'Chat is not enabled for this location.',
+    stop: 'Stop reply',
+    stopped: 'Reply stopped.',
+    talkToPerson: 'Talk to a person',
+    staffHere: '{name} from the team is helping you now',
+    staffHereAnon: 'A team member is helping you now',
+    aiPausedNote: 'The AI assistant is paused while they are here.',
+    callStore: 'Call {name}',
+    perMonth: '/mo',
+    months: 'mo',
+    viewOnSite: 'View full listing',
+    opensDealerSite: 'opens the dealership website',
+    locatedAt: 'At {name}',
+    feesIncluded: 'Price includes dealer-required fees.',
+    feesExtra: 'Taxes and fees are extra.',
+    listingChecked: 'Listing checked {d}',
+    photoOf: 'Photo {i} of {n}',
+    prevPhoto: 'Previous photo',
+    nextPhoto: 'Next photo',
+    vehiclesFound: '{n} vehicles',
+    leadTitle: 'How should {name} reach you?',
+    leadTitleGeneric: 'How should the team reach you?',
+    firstName: 'First name',
+    lastName: 'Last name',
+    email: 'Email',
+    phone: 'Mobile or phone number',
+    preferredContact: 'Preferred way to reach you',
+    channelEmail: 'Email',
+    channelCall: 'Phone call',
+    channelText: 'Text message',
+    consentHeading: 'Your permission',
+    leadSubmit: 'Send to the team',
+    leadSending: 'Sending…',
+    leadSentDisplay: 'Sent my contact details',
+    leadSentNote: 'Sent. You chose {channel}.',
+    leadPrivacy: 'Only what you enter here is shared with this dealership. Do not include Social Security, bank or card details.',
+    errRequired: 'Enter your {field}.',
+    errEmail: 'Enter a valid email address.',
+    errPhone: 'Enter a 10-digit phone number.',
+    errConsent: 'Check the box to allow contact by {channel}.',
+    errFix: 'Please fix the highlighted fields.',
+    pickTitle: 'Choose a time',
+    pickAt: 'at {name}',
+    pickOpen: 'Choose a time',
+    pickClose: 'Close time picker',
+    pickBook: 'Book this time',
+    pickRequest: 'Request this time',
+    pickDay: 'Day',
+    pickTime: 'Time',
+    pickWindow: 'Time of day',
+    morning: 'Morning',
+    afternoon: 'Afternoon',
+    evening: 'Evening',
+    pickNoSlots: 'No open times are showing right now. You can ask the team to call you with options.',
+    pickProviderNote: 'You are booked only after the scheduler confirms. You will see a confirmation number here.',
+    pickRequestNote: 'This sends a request. It is not booked until the team confirms the exact time with you.',
+    pickExternal: 'Open the scheduling page',
+    pickExternalNote: 'Opens the dealership’s own scheduling page. Nothing is booked from this chat.',
+    pickSandbox: 'Demo scheduler',
+    pickTimesIn: 'Times shown in {tz}',
+    apptSelectDisplay: 'Selected {t}',
+    apptRequestDisplay: 'Requested {d}, {w}',
+    apptConfirmedTitle: 'Appointment confirmed',
+    apptRequestedTitle: 'Request sent — not booked yet',
+    apptPendingTitle: 'Waiting for confirmation',
+    confirmationNo: 'Confirmation',
+    confirmedBy: 'Confirmed by {name}',
+    department: 'Department',
+    location: 'Location',
+    when: 'When',
 };
 
 const ES: typeof EN = {
@@ -258,6 +327,75 @@ const ES: typeof EN = {
     financeRequestTitle: 'Solicitud de financiamiento',
     financeRequestNote: 'Registrada para el equipo de finanzas — no es una aprobación ni una cotización de tasa.',
     chatUnavailable: 'El chat no está disponible en esta ubicación.',
+    stop: 'Detener respuesta',
+    stopped: 'Respuesta detenida.',
+    talkToPerson: 'Hablar con una persona',
+    staffHere: '{name} del equipo le está ayudando',
+    staffHereAnon: 'Un miembro del equipo le está ayudando',
+    aiPausedNote: 'El asistente de IA está en pausa mientras le atienden.',
+    callStore: 'Llamar a {name}',
+    perMonth: '/mes',
+    months: 'meses',
+    viewOnSite: 'Ver publicación completa',
+    opensDealerSite: 'abre el sitio de la agencia',
+    locatedAt: 'En {name}',
+    feesIncluded: 'El precio incluye los cargos obligatorios de la agencia.',
+    feesExtra: 'Impuestos y cargos son adicionales.',
+    listingChecked: 'Publicación verificada {d}',
+    photoOf: 'Foto {i} de {n}',
+    prevPhoto: 'Foto anterior',
+    nextPhoto: 'Foto siguiente',
+    vehiclesFound: '{n} vehículos',
+    leadTitle: '¿Cómo prefiere que {name} le contacte?',
+    leadTitleGeneric: '¿Cómo prefiere que el equipo le contacte?',
+    firstName: 'Nombre',
+    lastName: 'Apellido',
+    email: 'Correo electrónico',
+    phone: 'Celular o teléfono',
+    preferredContact: 'Forma de contacto preferida',
+    channelEmail: 'Correo electrónico',
+    channelCall: 'Llamada',
+    channelText: 'Mensaje de texto',
+    consentHeading: 'Su autorización',
+    leadSubmit: 'Enviar al equipo',
+    leadSending: 'Enviando…',
+    leadSentDisplay: 'Envié mis datos de contacto',
+    leadSentNote: 'Enviado. Eligió {channel}.',
+    leadPrivacy: 'Solo lo que escriba aquí se comparte con esta agencia. No incluya Seguro Social, datos bancarios ni de tarjetas.',
+    errRequired: 'Escriba su {field}.',
+    errEmail: 'Escriba un correo electrónico válido.',
+    errPhone: 'Escriba un teléfono de 10 dígitos.',
+    errConsent: 'Marque la casilla para permitir el contacto por {channel}.',
+    errFix: 'Corrija los campos marcados.',
+    pickTitle: 'Elija un horario',
+    pickAt: 'en {name}',
+    pickOpen: 'Elegir horario',
+    pickClose: 'Cerrar selector de horario',
+    pickBook: 'Reservar este horario',
+    pickRequest: 'Solicitar este horario',
+    pickDay: 'Día',
+    pickTime: 'Hora',
+    pickWindow: 'Momento del día',
+    morning: 'Mañana',
+    afternoon: 'Tarde',
+    evening: 'Noche',
+    pickNoSlots: 'No hay horarios disponibles en este momento. Puede pedir que el equipo le llame con opciones.',
+    pickProviderNote: 'Su cita queda reservada solo cuando el sistema la confirma. Verá aquí un número de confirmación.',
+    pickRequestNote: 'Esto envía una solicitud. No queda reservada hasta que el equipo confirme la hora exacta con usted.',
+    pickExternal: 'Abrir la página de citas',
+    pickExternalNote: 'Abre la página de citas de la agencia. Nada se reserva desde este chat.',
+    pickSandbox: 'Agenda de demostración',
+    pickTimesIn: 'Horarios en {tz}',
+    apptSelectDisplay: 'Elegí {t}',
+    apptRequestDisplay: 'Solicité {d}, {w}',
+    apptConfirmedTitle: 'Cita confirmada',
+    apptRequestedTitle: 'Solicitud enviada — aún no reservada',
+    apptPendingTitle: 'Esperando confirmación',
+    confirmationNo: 'Confirmación',
+    confirmedBy: 'Confirmada por {name}',
+    department: 'Departamento',
+    location: 'Ubicación',
+    when: 'Cuándo',
 };
 
 export type CopyKey = keyof typeof EN;
@@ -269,4 +407,38 @@ export function c(lang: Lang, key: CopyKey, vars: Record<string, string | number
 
 export function money(n: number, lang: Lang = 'en'): string {
     return `$${Math.round(n).toLocaleString(lang === 'es' ? 'es-US' : 'en-US')}`;
+}
+
+/** Calendar date + time in the store's own timezone (never the visitor's device zone). */
+export function formatWhen(iso: string, timeZone: string, lang: Lang, parts: 'both' | 'date' | 'time' = 'both'): string {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    const locale = lang === 'es' ? 'es-US' : 'en-US';
+    const date: Intl.DateTimeFormatOptions = { weekday: 'short', month: 'short', day: 'numeric' };
+    const time: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit' };
+    const opts = parts === 'date' ? date : parts === 'time' ? time : { ...date, ...time };
+    try {
+        return new Intl.DateTimeFormat(locale, { ...opts, timeZone }).format(d);
+    } catch {
+        return new Intl.DateTimeFormat(locale, opts).format(d);
+    }
+}
+
+/** yyyy-mm-dd of an instant in the given timezone — used to group slots by store-local day. */
+export function localDayKey(iso: string, timeZone: string): string {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso.slice(0, 10);
+    try {
+        return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+    } catch {
+        return d.toISOString().slice(0, 10);
+    }
+}
+
+/** A plain calendar day (yyyy-mm-dd) rendered without shifting it across timezones. */
+export function formatDay(day: string, lang: Lang): string {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
+    if (!m) return day;
+    const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12));
+    return new Intl.DateTimeFormat(lang === 'es' ? 'es-US' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(d);
 }
