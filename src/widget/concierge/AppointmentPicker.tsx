@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { AppointmentCard, AppointmentPickerCard, AppointmentSelection, AppointmentWindow, Lang } from './types';
 import { c, formatDay, formatWhen } from './copy';
-import { groupSlots } from './slots';
+import { clockSkewMs, groupSlots } from './slots';
 import { CloseIcon, ExternalIcon } from '../icons';
 
 const WINDOWS: AppointmentWindow[] = ['morning', 'afternoon', 'evening'];
@@ -28,7 +28,13 @@ export function AppointmentPicker(props: {
     const openerRef = useRef<HTMLButtonElement | null>(null);
     const sheetRef = useRef<HTMLDivElement | null>(null);
 
-    const groups = useMemo(() => (card.mode === 'provider_slots' ? groupSlots(card.slots ?? [], card.timezone) : []), [card.mode, card.slots, card.timezone]);
+    // Server-corrected "now", captured once when the card first renders (that is when it
+    // arrived). Offers are short-lived and the server re-checks every selection.
+    const [now] = useState(() => Date.now() + clockSkewMs(card.serverNow));
+    const groups = useMemo(
+        () => (card.mode === 'provider_slots' ? groupSlots(card.slots ?? [], card.timezone, now) : []),
+        [card.mode, card.slots, card.timezone, now],
+    );
     const [activeDay, setActiveDay] = useState<string | null>(null);
     const shownDay = activeDay ?? groups[0]?.day ?? null;
     const shownSlots = groups.find((g) => g.day === shownDay)?.slots ?? [];

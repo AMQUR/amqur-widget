@@ -5,7 +5,7 @@ import { VehicleCard } from './VehicleCard';
 import { createSseParser } from '../api/chat.api';
 import { redactForStorage } from './redact';
 import { isEmail, isPhone, phoneDigits, validateLead } from './leadValidation';
-import { groupSlots } from './slots';
+import { clockSkewMs, groupSlots } from './slots';
 import { c, formatDay, formatWhen, localDayKey } from './copy';
 import { assetBaseFromScript, resolveTheme } from '../theme';
 import type { AppointmentCard, AppointmentPickerCard, Card, LeadFormCard, Vehicle } from './types';
@@ -196,6 +196,21 @@ describe('appointment picker', () => {
             { day: '2026-11-20', slots: [{ id: 'late', start: '2026-11-21T04:30:00Z' }] },
             { day: '2026-11-21', slots: [{ id: 'next', start: '2026-11-21T15:00:00Z' }] },
         ]);
+    });
+});
+
+describe('device clock correction', () => {
+    it('uses the server timestamp so a wrong device clock cannot hide live slots', () => {
+        const serverNow = '2026-10-13T15:00:00Z';
+        const deviceNow = Date.parse('2026-11-18T20:00:00Z'); // device is five weeks ahead
+        const skew = clockSkewMs(serverNow, deviceNow);
+        const slots = [{ id: 'a', start: '2026-10-14T15:00:00Z', expiresAt: '2026-10-13T15:15:00Z' }];
+        expect(groupSlots(slots, 'America/Chicago', deviceNow)).toEqual([]);
+        expect(groupSlots(slots, 'America/Chicago', deviceNow + skew)).toHaveLength(1);
+    });
+    it('falls back to the device clock without a usable server timestamp', () => {
+        expect(clockSkewMs(null, 1000)).toBe(0);
+        expect(clockSkewMs('not a date', 1000)).toBe(0);
     });
 });
 

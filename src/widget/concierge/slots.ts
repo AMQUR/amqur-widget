@@ -13,3 +13,13 @@ export function groupSlots(slots: AppointmentSlot[], timeZone: string, now: numb
     }
     return [...days.entries()].map(([day, list]) => ({ day, slots: list }));
 }
+
+/**
+ * Milliseconds to add to the device clock to get server time, measured once when the card
+ * arrives. Without a server timestamp the device clock is used as is. The server remains the
+ * authority on whether a slot can still be booked; this only decides what is worth showing.
+ */
+export function clockSkewMs(serverNow: string | null | undefined, deviceNow: number = Date.now()): number {
+    const t = serverNow ? Date.parse(serverNow) : NaN;
+    return Number.isNaN(t) ? 0 : t - deviceNow;
+}

@@ -73,6 +73,8 @@ export type AppointmentPickerCard = {
     purpose: string;
     rooftopName: string;
     timezone: string;
+    /** Server time when the card was issued; used to correct for a wrong device clock. */
+    serverNow?: string | null;
     /**
      * provider_slots — real availability from an authorised scheduler; choosing one books it.
      * request_only   — no scheduler access; the customer states a preference and staff confirm.
