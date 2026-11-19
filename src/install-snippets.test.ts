@@ -160,6 +160,9 @@ describe('embed loader build', () => {
     const index = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
     const redeem = fs.readFileSync(path.join(out, 'canary-redeem.html'), 'utf8');
     expect(index).toContain(`var API_BASE = "${api}/api";`);
+    expect(index).toContain('Isolated Staging Canary');
+    expect(index).toContain('data-amqur-isolated-build=');
+    expect(index).not.toContain('Internal Employee Canary Host');
     expect(redeem).toContain(`var api = "${api}";`);
     expect(redeem).not.toContain('id="api"');
     expect(redeem).toContain('protected isolated staging preview with synthetic data');

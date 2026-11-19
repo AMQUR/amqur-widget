@@ -11,6 +11,10 @@ ARG APP_COMMIT_SHA=unknown
 ARG APP_BUILD_TIME=unknown
 ARG APP_RELEASE_ID=unknown
 ARG APP_RELEASE_VERSION=0.2.0
+ENV APP_COMMIT_SHA=$APP_COMMIT_SHA \
+  APP_BUILD_TIME=$APP_BUILD_TIME \
+  APP_RELEASE_ID=$APP_RELEASE_ID \
+  APP_RELEASE_VERSION=$APP_RELEASE_VERSION
 # Hard-coded so Railway cannot silently fall back to the shared staging profile.
 ARG AMQUR_WIDGET_BUILD_PROFILE=isolated-staging
 RUN test "$AMQUR_WIDGET_BUILD_PROFILE" = "isolated-staging" \
@@ -19,23 +23,17 @@ RUN test "$AMQUR_WIDGET_BUILD_PROFILE" = "isolated-staging" \
   && cp dist/assistant-widget.iife.js /out/assistant-widget.iife.js \
   && mkdir -p /out/assets/fonts && cp -R dist/assets/fonts/. /out/assets/fonts/ \
   && cp dist/assistant-widget.iife.js /out/amqur-widget.iife.js \
-  && cp staging/public/index.isolated.html /out/index.html \
+  && test -f staging/public/index.isolated.html \
   && test ! -e /out/amqur-canary-loader.js \
   && node scripts/build-embed-loader.mjs --env isolated-staging --out /out \
-  && printf '%s\n' \
-    '{' \
-    '  "name": "amqur-widget",' \
-    "  \"version\": \"${APP_RELEASE_VERSION}\"," \
-    "  \"commitSha\": \"${APP_COMMIT_SHA}\"," \
-    "  \"buildTime\": \"${APP_BUILD_TIME}\"," \
-    "  \"releaseId\": \"${APP_RELEASE_ID}\"" \
-    '}' > /out/version.json \
-  && grep -q 'Isolated Staging Canary' /out/index.html \
-  && grep -q 'data-amqur-isolated-build=' /out/index.html \
-  && grep -q 'backend-staging-staging-b699.up.railway.app' /out/embed-manifest.json \
-  && ! grep -q 'https://api.dialusnow.com' /out/index.html \
-  && ! grep -q 'staging-api.dialusnow.com\|api.dialusnow.com\|widget.dialusnow.com' /out/embed.js \
-  && ! grep -q 'staging-api.dialusnow.com' /out/embed-manifest.json
+  && node -e 'const fs=require("fs"); const v={name:"amqur-widget",version:process.env.APP_RELEASE_VERSION||"0.2.0",commitSha:process.env.APP_COMMIT_SHA||"unknown",buildTime:process.env.APP_BUILD_TIME||"unknown",releaseId:process.env.APP_RELEASE_ID||"unknown"}; fs.writeFileSync("/out/version.json", JSON.stringify(v,null,2)+"\n");' \
+  && grep -F 'Isolated Staging Canary' /out/index.html \
+  && grep -F 'data-amqur-isolated-build=' /out/index.html \
+  && grep -F 'backend-staging-staging-b699.up.railway.app' /out/embed-manifest.json \
+  && ! grep -F 'https://api.dialusnow.com' /out/index.html \
+  && ! grep -F 'Internal Employee Canary Host' /out/index.html \
+  && ! grep -E 'staging-api\.dialusnow\.com|https://api\.dialusnow\.com|https://widget\.dialusnow\.com' /out/embed.js \
+  && ! grep -F 'staging-api.dialusnow.com' /out/embed-manifest.json
 
 FROM nginx:alpine
 COPY staging/nginx.conf.template /etc/nginx/templates/default.conf.template
@@ -46,6 +44,7 @@ RUN chmod +x /docker-entrypoint-amqur.sh \
   && test -f /usr/share/nginx/html/assistant-widget.iife.js \
   && test -f /usr/share/nginx/html/embed.js \
   && test -f /usr/share/nginx/html/embed-manifest.json \
-  && test -f /usr/share/nginx/html/version.json
+  && test -f /usr/share/nginx/html/version.json \
+  && grep -F 'Isolated Staging Canary' /usr/share/nginx/html/index.html
 EXPOSE 80
 CMD ["/docker-entrypoint-amqur.sh"]

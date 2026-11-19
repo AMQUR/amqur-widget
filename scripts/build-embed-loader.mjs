@@ -191,8 +191,13 @@ if (targetEnv !== 'production') {
 
 mkdirSync(outDir, { recursive: true });
 if (isolated) {
-  const index = readFileSync(resolve(root, 'staging/public/index.html'), 'utf8')
-    .replaceAll(HOSTS.staging.apiHost, hosts.apiHost);
+  // Prefer the dedicated isolated canary page. Never rewrite the shared staging index —
+  // that produced a hybrid page (shared title, isolated API) and confused deploy gates.
+  const isolatedIndexPath = resolve(root, 'staging/public/index.isolated.html');
+  if (!existsSync(isolatedIndexPath)) {
+    throw new Error('isolated-staging requires staging/public/index.isolated.html');
+  }
+  const index = readFileSync(isolatedIndexPath, 'utf8');
   const redeem = readFileSync(resolve(root, 'staging/public/canary-redeem.html'), 'utf8')
     .replace(/<label for="api">[\s\S]*?<label for="token">/, '<label for="token">')
     .replace("document.getElementById('api').value.replace(/\\/$/, '')", JSON.stringify(hosts.apiHost))
@@ -201,6 +206,9 @@ if (isolated) {
     if (!page.includes(hosts.apiHost) || [prod.apiHost, prod.widgetHost, HOSTS.staging.apiHost, HOSTS.staging.widgetHost].some((host) => page.includes(host))) {
       throw new Error('isolated staging page does not use the isolated hosts');
     }
+  }
+  if (!index.includes('Isolated Staging Canary') || !index.includes('data-amqur-isolated-build=')) {
+    throw new Error('isolated staging index missing Isolated Staging Canary markers');
   }
   if (redeem.includes('id="api"') || redeem.includes("getElementById('api')")) {
     throw new Error('isolated staging redemption page still reads an editable API origin');
