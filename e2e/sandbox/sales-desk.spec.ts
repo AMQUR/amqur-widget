@@ -383,6 +383,13 @@ test.describe('host isolation and theming', () => {
 test.describe('accessibility', () => {
     test('axe: no WCAG 2.2 A/AA violations across the journey states', async ({ page }) => {
         const scan = async (label: string) => {
+            // Contrast is only meaningful at rest: wait for the open/rise animations to finish
+            // (Firefox occasionally scanned mid-fade and reported the header as low contrast).
+            await page.evaluate(async () => {
+                const root = document.getElementById('amqur-widget-host')!.shadowRoot!;
+                const finite = root.getAnimations().filter((a) => Number.isFinite(a.effect?.getComputedTiming().endTime as number));
+                await Promise.all(finite.map((a) => a.finished.catch(() => undefined)));
+            });
             const results = await new AxeBuilder({ page }).include('#amqur-widget-host').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
             const summary = results.violations.map((v) => `${label}: ${v.id} (${v.impact}) × ${v.nodes.length} — ${v.nodes[0]?.target.join(' ')}`);
             expect(summary, `axe violations at ${label}`).toEqual([]);

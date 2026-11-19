@@ -23,6 +23,8 @@ let reactRoot: Root | null = null;
 let bootstrapped = false;
 /** In-flight init. A second init() while one is pending joins it instead of racing it. */
 let initializing: Promise<void> | null = null;
+/** Bumped by destroy(). A start-up that began before the bump must not mount afterwards. */
+let generation = 0;
 
 function disposeReact(): void {
   reactRoot?.unmount();
@@ -92,10 +94,12 @@ function bootstrap(options: AmqurInitOptions): Promise<void> {
     return Promise.resolve();
   }
   if (initializing) return initializing;
-  initializing = runBootstrap(options).finally(() => {
-    initializing = null;
+  const mine: Promise<void> = runBootstrap(options).finally(() => {
+    // destroy() may have replaced this with a newer start-up; only clear our own.
+    if (initializing === mine) initializing = null;
   });
-  return initializing;
+  initializing = mine;
+  return mine;
 }
 
 async function runBootstrap(options: AmqurInitOptions) {
@@ -111,6 +115,7 @@ async function runBootstrap(options: AmqurInitOptions) {
   }
 
   cleanupHost();
+  const startedIn = generation;
 
   const host = document.createElement("div");
   host.id = "amqur-widget-host";
@@ -118,6 +123,12 @@ async function runBootstrap(options: AmqurInitOptions) {
 
   try {
     await initConnection(options);
+    // destroy() ran while we were connecting: this start-up is cancelled. Mounting now would
+    // put the widget into a detached element and mark it ready with nothing on the page.
+    if (startedIn !== generation) {
+      host.remove();
+      return;
+    }
     mount(host, options);
     bootstrapped = true;
   } catch (e) {
@@ -126,11 +137,15 @@ async function runBootstrap(options: AmqurInitOptions) {
     // Short, PII-free line for operators; full detail only in debug mode.
     console.error("[AMQUR] widget did not start", DEBUG ? e : { reason: msg.slice(0, 120) });
     host.remove();
+    if (startedIn !== generation) return;
     reportBootFailure(msg);
   }
 }
 
 function destroy(): void {
+  generation += 1;
+  // Let a later init() start fresh instead of joining the start-up just cancelled.
+  initializing = null;
   cleanupHost();
 }
 
