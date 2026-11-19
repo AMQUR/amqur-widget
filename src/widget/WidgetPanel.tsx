@@ -125,12 +125,17 @@ export function WidgetPanel({
       'button:not([disabled]), [href], textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
     );
     if (focusable.length === 0) return;
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
-    if (e.shiftKey && document.activeElement === first) {
+    const visible = Array.from(focusable).filter((el) => el.getClientRects().length > 0);
+    if (visible.length === 0) return;
+    const first = visible[0]!;
+    const last = visible[visible.length - 1]!;
+    // Inside a shadow root, document.activeElement is the host element, never the control.
+    const root = panelRef.current.getRootNode() as Document | ShadowRoot;
+    const active = root.activeElement;
+    if (e.shiftKey && active === first) {
       e.preventDefault();
       last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
+    } else if (!e.shiftKey && active === last) {
       e.preventDefault();
       first.focus();
     }

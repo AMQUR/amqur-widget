@@ -115,6 +115,7 @@
 .amqur[data-theme="showroom"] .amq-linkbtn:focus-visible,
 .amqur[data-theme="showroom"] .amq-chip--quick:focus-visible,
 .amqur[data-theme="showroom"] .amq-cards:focus-visible,
+.amqur[data-theme="showroom"] .amq-tray ul:focus-visible,
 .amqur[data-theme="showroom"] .amq-slot:focus-visible,
 .amqur[data-theme="showroom"] .amq-field input:focus-visible,
 .amqur[data-theme="showroom"] .amq-field select:focus-visible,
@@ -148,6 +149,7 @@
 .amqur[data-theme="showroom"] .amq-compare__diff td { background: var(--amqur-bg); }
 
 /* Journey tray + composer */
+.amqur[data-theme="showroom"] .amq-gallery__btn svg { border-radius: 0; }
 .amqur[data-theme="showroom"] .amq-tray li { background: var(--amqur-bg); border-left: 2px solid var(--amq-ink); }
 .amqur[data-theme="showroom"] .amq-composer textarea { background: #fff; border-color: var(--amq-line-strong); }
 .amqur[data-theme="showroom"] .amq-lang { border-color: var(--amq-line-strong); }

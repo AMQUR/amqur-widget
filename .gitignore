@@ -39,3 +39,5 @@ test-results/
 
 version.json
 release.json
+test-results-sandbox
+playwright-report-sandbox

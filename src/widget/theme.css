@@ -1,7 +1,11 @@
-/* Host reset: block host inheritance of color/line-height into the open Shadow root. */
+/*
+ * Host reset. `!important` matters here: for important declarations the shadow tree's own
+ * :host rule outranks the page's, so a dealer site rule such as
+ * `* { text-transform: uppercase !important }` cannot reach the widget through inheritance.
+ */
 :host {
-    all: initial;
-    display: block;
+    all: initial !important;
+    display: block !important;
 }
 
 /* Variables on .amqur so they apply inside Shadow DOM (:root would target the document). */
@@ -14,7 +18,8 @@
     --amqur-bg: #f5f5f2;
     --amqur-surface: #ffffff;
     --amqur-text: rgba(20, 22, 28, 0.96);
-    --amqur-muted: rgba(20, 22, 28, 0.58);
+    /* 0.70 keeps small secondary text at or above 4.5:1 on both the page and card surfaces. */
+    --amqur-muted: rgba(20, 22, 28, 0.7);
     --amqur-border: rgba(15, 20, 30, 0.09);
 
     --amqur-shadow: 0 18px 50px -12px rgba(15, 20, 35, 0.28), 0 2px 8px rgba(15, 20, 35, 0.06);
@@ -30,6 +35,13 @@
     color: var(--amqur-text);
     line-height: 1.45;
     letter-spacing: normal;
+    word-spacing: normal;
+    text-transform: none;
+    text-align: left;
+    text-indent: 0;
+    font-style: normal;
+    font-weight: 400;
+    direction: ltr;
     font-size: 14px;
     -webkit-font-smoothing: antialiased;
 }
@@ -707,3 +719,19 @@
     .amq-slot[aria-pressed="true"] { forced-color-adjust: none; background: Highlight; color: HighlightText; }
     .amq-field input, .amq-slot, .amq-radio { border: 1px solid CanvasText; }
 }
+.amq-tray ul:focus-visible { outline: 3px solid color-mix(in srgb, var(--amqur-primary) 60%, white); outline-offset: -3px; }
+
+/* Short screens (small phones, landscape): give the conversation the room. */
+@media (max-height: 640px) {
+    .amq-tray ul { padding: 6px 12px; }
+    .amq-tray li { flex-direction: row; align-items: baseline; gap: 6px; padding: 3px 8px; }
+    .amq-tray__label { display: none; }
+    .amq-header { min-height: 56px; padding-top: 6px; padding-bottom: 6px; }
+    .amq-footer { padding: 6px 12px; font-size: 10.5px; line-height: 1.35; }
+    .amq-footer p { margin-bottom: 2px; }
+    .amq-composer { padding: 6px 10px; }
+}
+/* Gallery controls: full 44px hit area, lighter visual weight over the photo. */
+.amq-gallery__btn { background: transparent; }
+.amq-gallery__btn svg { width: 30px; height: 30px; padding: 6px; border-radius: 999px; background: rgba(16, 17, 19, 0.72); }
+.amq-gallery__btn:disabled { opacity: 0; }

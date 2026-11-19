@@ -245,8 +245,7 @@ export function AppointmentReceipt({ card, lang }: { card: AppointmentCard; lang
             </dl>
             {confirmed ? (
                 <p className="amq-muted amq-small">
-                    {card.providerName ? c(lang, 'confirmedBy', { name: card.providerName }) : null}
-                    {card.sandbox ? ` · ${c(lang, 'pickSandbox')}` : ''}
+                    {card.sandbox ? c(lang, 'sandboxReceipt') : card.providerName ? c(lang, 'confirmedBy', { name: card.providerName }) : null}
                 </p>
             ) : (
                 <p className="amq-muted amq-small">{c(lang, 'requestNote')}</p>

@@ -26,7 +26,8 @@ export function JourneyTray({ journey, lang }: { journey: Journey; lang: Lang })
     if (!items.length) return null;
     return (
         <nav className="amq-tray" aria-label={c(lang, 'journey')}>
-            <ul>
+            {/* Scrolls sideways on narrow screens, so it must be reachable by keyboard. */}
+            <ul tabIndex={0}>
                 {items.map((i) => (
                     <li key={i.k} title={`${i.label}: ${i.value}`}>
                         <span className="amq-tray__label">{i.label}</span>
