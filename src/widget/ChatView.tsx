@@ -286,7 +286,9 @@ export function ChatView() {
                         className="amq-lang"
                         onClick={() => conv.setLanguage(lang === 'es' ? 'en' : 'es')}
                         lang={lang === 'es' ? 'en' : 'es'}
-                        aria-label={lang === 'es' ? 'Switch to English' : 'Cambiar a español'}
+                        // The accessible name starts with the visible text (WCAG 2.5.3 Label in Name),
+                        // so speech-input users can say what they see.
+                        aria-label={lang === 'es' ? 'EN: switch to English' : 'ES: cambiar a español'}
                     >
                         {lang === 'es' ? 'EN' : 'ES'}
                     </button>
