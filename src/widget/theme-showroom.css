@@ -76,7 +76,7 @@
 .amqur[data-theme="showroom"] .amq-msg--user p { background: var(--amq-ink); color: #fff; }
 .amqur[data-theme="showroom"] .amq-msg--ai p,
 .amqur[data-theme="showroom"] .amq-msg--staff p { box-shadow: none; }
-.amqur[data-theme="showroom"] .amq-msg--staff p { border-left: 4px solid var(--amq-store); }
+.amqur[data-theme="showroom"] .amq-msg--staff p { border: 1px solid var(--amq-line-strong); }
 .amqur[data-theme="showroom"] .amq-presence { background: var(--amqur-surface); border: 1px solid var(--amqur-border); color: var(--amq-ink-soft); }
 
 /* Labels are plain labels, not eyebrows */
@@ -150,7 +150,7 @@
 
 /* Journey tray + composer */
 .amqur[data-theme="showroom"] .amq-gallery__btn svg { border-radius: 0; }
-.amqur[data-theme="showroom"] .amq-tray li { background: var(--amqur-bg); border-left: 2px solid var(--amq-ink); }
+.amqur[data-theme="showroom"] .amq-tray li { background: var(--amqur-bg); border: 1px solid var(--amqur-border); }
 .amqur[data-theme="showroom"] .amq-composer textarea { background: #fff; border-color: var(--amq-line-strong); }
 .amqur[data-theme="showroom"] .amq-lang { border-color: var(--amq-line-strong); }
 .amqur[data-theme="showroom"] .amq-confirm { background: var(--amqur-surface); }
