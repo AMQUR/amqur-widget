@@ -13,6 +13,7 @@ ARG APP_RELEASE_VERSION=0.2.0
 RUN npm run build \
   && mkdir -p /out \
   && cp dist/assistant-widget.iife.js /out/assistant-widget.iife.js \
+  && mkdir -p /out/assets/fonts && cp -R dist/assets/fonts/. /out/assets/fonts/ \
   && cp dist/assistant-widget.iife.js /out/amqur-widget.iife.js \
   && cp staging/public/index.html /out/index.html \
   && cp staging/public/amqur-canary-loader.js /out/amqur-canary-loader.js \
