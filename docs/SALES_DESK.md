@@ -41,10 +41,32 @@ Vehicle additions: `vdpUrl` (https only, else not linked), `rooftopName` (shown 
 
 Host page hooks: `--amqur-launcher-bottom` and `--amqur-launcher-right` on `#amqur-widget-host`.
 
+## Loader environments
+
+`embed.js` is built per environment and the API it talks to is baked in. A host page cannot
+change it: there is no query-string, global or attribute override.
+
+| Build | Command | Hosts | Where it may be written |
+|---|---|---|---|
+| production | `npm run build:embed` | `widget.dialusnow.com` / `api.dialusnow.com` | `cdn/public` |
+| staging | `node scripts/build-embed-loader.mjs --env staging --out <dir>` | staging hosts | staging image |
+| local | `node scripts/build-embed-loader.mjs --env local [--widget-host … --api-host …]` | loopback only (`localhost` / `127.0.0.1`) | anywhere except `cdn/` |
+
+A page may add `data-expect-api-origin="https://…"` to the script tag. It is a check, not an
+address: if it does not equal the loader's own API origin, the loader logs
+`api_origin_mismatch`, loads nothing and contacts nothing. Sites that pin their Content Security
+Policy to one API origin should always set it, so a loader from the wrong environment cannot run
+on them. `window.AMQUR_EMBED` exposes `environment`, `apiOrigin` and `widgetOrigin` read-only,
+and `embed-manifest.json` carries the same facts for install checks.
+
+`node scripts/serve-local-cdn.mjs` serves `dist/` on loopback with the CDN's CORS behaviour for
+local and protected test runs.
+
 ## Host CSP
 
 `script-src <widget origin>`; `connect-src <api origin>`; `font-src <widget origin>` (Showroom
-only); `img-src <widget origin>` plus each authorised vehicle-photo host; `style-src` must allow
+only; the CDN serves `/assets/fonts/` with `Access-Control-Allow-Origin`, which a cross-origin
+font needs); `img-src <widget origin>` plus each authorised vehicle-photo host; `style-src` must allow
 the widget's inline `<style>` inside its shadow root.
 
 ## Privacy
