@@ -106,3 +106,69 @@ test('search → vehicle → payment illustration → consented lead → sandbox
     const stored = await page.evaluate(() => JSON.stringify({ ...localStorage }) + JSON.stringify({ ...sessionStorage }));
     expect(stored).not.toMatch(/sandbox\.tester@example\.invalid|Tester/);
 });
+
+/**
+ * Staff takeover with the real widget and the real backend in ONE browser session: the shopper
+ * asks for a person, a staff member (signed in through the staff API with a throwaway local
+ * account) takes over and replies, the widget shows them and pauses the AI, then release hands
+ * the conversation back. Needs DEMO_ADMIN_EMAIL / DEMO_ADMIN_PASSWORD of the local demo seed.
+ */
+test('staff takeover: the widget shows the staff member, the AI stays silent, release resumes it', async ({ page, request }) => {
+    const email = process.env.DEMO_ADMIN_EMAIL;
+    const password = process.env.DEMO_ADMIN_PASSWORD;
+    test.skip(!email || !password, 'set DEMO_ADMIN_EMAIL and DEMO_ADMIN_PASSWORD (the local demo seed account)');
+    const unwrap = async <T,>(r: { json: () => Promise<unknown> }): Promise<T> => {
+        const b = (await r.json()) as { data?: T };
+        return (b.data ?? b) as T;
+    };
+    const login = await unwrap<{ access_token?: string; accessToken?: string }>(await request.post(`${API}/api/auth/login`, { data: { email, password } }));
+    const staff = { Authorization: `Bearer ${login.access_token ?? login.accessToken}` };
+
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Open assistant' }).click();
+    await expect(page.getByText(/AI assistant · Connected/)).toBeVisible();
+    const marker = `takeover check ${Date.now()}`;
+    await say(page, `I have a question about my order, ${marker}`);
+    await say(page, 'I want to talk to a person');
+    // Truthful wording: a request was recorded; nobody is claimed to have been notified yet.
+    await expect(page.getByText(/AI assistant is paused/)).toHaveCount(0);
+
+    // Staff side: find this conversation in the inbox by the shopper's own words.
+    // Only the two most recently active conversations are opened: scanning the whole inbox
+    // would spend the local rate limit.
+    type Item = { id: string; lastActivityAt: string };
+    let conversationId = '';
+    await expect.poll(async () => {
+        const res = await request.get(`${API}/api/ops/inbox`, { headers: staff });
+        if (!res.ok()) return false; // e.g. the local rate limit; poll again
+        const inbox = await unwrap<{ items: Item[] }>(res);
+        const newest = [...(inbox.items ?? [])].sort((a, b) => b.lastActivityAt.localeCompare(a.lastActivityAt)).slice(0, 2);
+        for (const it of newest) {
+            const detail = await (await request.get(`${API}/api/ops/conversations/${it.id}`, { headers: staff })).text();
+            if (detail.includes(marker)) { conversationId = it.id; return true; }
+        }
+        return false;
+    }, { timeout: 20_000, intervals: [1_000, 2_000, 3_000] }).toBe(true);
+
+    expect((await request.post(`${API}/api/ops/conversations/${conversationId}/takeover`, { headers: staff })).ok()).toBe(true);
+    const reply = 'Hello, this is the demo team. Happy to help with that.';
+    expect((await request.post(`${API}/api/ops/conversations/${conversationId}/reply`, { headers: staff, data: { text: reply } })).ok()).toBe(true);
+    await request.post(`${API}/api/ops/conversations/${conversationId}/notes`, { headers: staff, data: { text: 'internal note: must never reach the shopper' } });
+
+    // Shopper side: the staff message arrives, the staff bar says the AI is paused.
+    await expect(page.getByText(reply)).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole('status').filter({ hasText: /AI assistant is paused/ })).toBeVisible();
+    await expect(page.getByText(/internal note/)).toHaveCount(0);
+    await shot(page, '08-staff-joined');
+
+    // While staff are here the AI does not answer: a search request produces no vehicles.
+    await say(page, 'Show me SUVs');
+    await expect(page.getByRole('region', { name: /vehicles/ })).toHaveCount(0);
+
+    // Release: the AI answers again.
+    expect((await request.post(`${API}/api/ops/conversations/${conversationId}/release`, { headers: staff })).ok()).toBe(true);
+    await expect(page.getByRole('status').filter({ hasText: /AI assistant is paused/ })).toHaveCount(0, { timeout: 20_000 });
+    await say(page, 'Show me SUVs');
+    await expect(page.getByRole('region', { name: /vehicles/ })).toBeVisible();
+    await shot(page, '09-ai-resumed');
+});
