@@ -7,6 +7,13 @@ server {
     # NOTE: nginx does not inherit server-level add_header into locations that
     # set their own add_header — repeat baseline headers in every location.
 
+    location = /healthz {
+        default_type text/plain;
+        add_header Cache-Control "no-store" always;
+        add_header X-Robots-Tag "noindex, nofollow" always;
+        return 200 'ok\n';
+    }
+
     location = /assistant-widget.iife.js {
         default_type application/javascript;
         add_header Cache-Control "public, max-age=300" always;
