@@ -16,13 +16,18 @@
     "test:staging": "playwright test",
     "test:local": "playwright test",
     "test:e2e": "playwright test",
-    "dev:demo": "vite --mode demo --port 5173 --strictPort"
+    "dev:demo": "vite --mode demo --port 5173 --strictPort",
+    "test:sandbox": "playwright test --config playwright.sandbox.config.ts",
+    "sandbox": "node e2e/sandbox/sandbox-server.mjs",
+    "test:integration": "playwright test --config playwright.integration.config.ts",
+    "test:isolated-hosted": "playwright test --config playwright.isolated.config.ts"
   },
   "dependencies": {
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^9.39.1",
     "@playwright/test": "^1.61.1",
     "@types/node": "^24.10.1",

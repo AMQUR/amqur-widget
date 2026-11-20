@@ -38,7 +38,7 @@ export function ProactiveEngagement(props: { lang: Lang; pageContext: PageContex
         }
     };
     return (
-        <div className="amq-nudge" role="complementary" aria-label="Suggestion">
+        <div className="amq-nudge" role="complementary" aria-label={c(props.lang, 'suggestion')}>
             <p>{kind === 'vdp' ? c(props.lang, 'welcomeVdp') : c(props.lang, 'welcomeService')}</p>
             <div className="amq-actions">
                 <button

@@ -5,6 +5,8 @@ export type AmqurWidgetConfig = {
     jwtToken?: string;
     /** Optional UI language override: en | es */
     locale?: string;
+    /** Styling fallback when the tenant has no server-side theme: neutral | showroom. */
+    theme?: string;
     /**
      * Optional explicit host-page context (e.g. from the dealer's VDP template):
      * { pageType, vin, stockNumber, vehicleYear, vehicleMake, vehicleModel, vehicleTrim, campaign, department }
@@ -56,6 +58,8 @@ export type WidgetBootstrapResult = {
         welcomeMessage?: string;
         primaryColor: string;
         accentColor: string;
+        /** Server-selected widget theme: neutral (default) | showroom. */
+        theme?: string | null;
         logoUrl: string | null;
         logoAlt?: string | null;
         launcherIconUrl?: string | null;

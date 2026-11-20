@@ -34,12 +34,104 @@ export type Vehicle = {
     freshnessState?: string | null;
     /** Synthetic local-demo fixture — always badged, never presented as dealership stock. */
     simulated?: boolean;
+    /** Canonical vehicle page on the owning rooftop's own website (https only; server-verified). */
+    vdpUrl?: string | null;
+    /** Rooftop that physically holds this vehicle — shown whenever results span stores. */
+    rooftopName?: string | null;
+    /** True only when the listed price is known to include dealer-required fees. */
+    priceIncludesDealerFees?: boolean | null;
 };
 
 export type OtdLine = { label: string; amount: number; kind: 'price' | 'dealer_fee' | 'tax' | 'government' };
 
+export type ContactChannel = 'EMAIL' | 'CALL' | 'TEXT';
+
+/** One bookable time. `id` is opaque and server-issued; `expiresAt` bounds how long it is offered. */
+export type AppointmentSlot = { id: string; start: string; end?: string | null; expiresAt?: string | null };
+
+export type AppointmentWindow = 'morning' | 'afternoon' | 'evening';
+
+export type LeadFormCard = {
+    kind: 'lead_form';
+    id: string;
+    purpose: 'sales' | 'test_drive' | 'service' | 'parts' | 'callback';
+    rooftopName: string;
+    vehicleLabel?: string | null;
+    vin?: string | null;
+    /** Contact channels this rooftop can actually use right now. */
+    channels: ContactChannel[];
+    /** Versioned consent wording per channel, supplied by the server — never authored client-side. */
+    consent: { version: string; text: Partial<Record<ContactChannel, string>> };
+    /** Why the details are being asked for, in the customer's language. */
+    reason?: string;
+};
+
+export type AppointmentPickerCard = {
+    kind: 'appointment_picker';
+    id: string;
+    department: 'sales' | 'service' | 'parts';
+    purpose: string;
+    rooftopName: string;
+    timezone: string;
+    /** Server time when the card was issued; used to correct for a wrong device clock. */
+    serverNow?: string | null;
+    /**
+     * provider_slots — real availability from an authorised scheduler; choosing one books it.
+     * request_only   — no scheduler access; the customer states a preference and staff confirm.
+     * external_link  — the store's own scheduling page; opening it books nothing here.
+     */
+    mode: 'provider_slots' | 'request_only' | 'external_link';
+    slots?: AppointmentSlot[];
+    /** ISO dates (yyyy-mm-dd) offered in request_only mode. */
+    days?: string[];
+    externalUrl?: string | null;
+    vehicleLabel?: string | null;
+    vin?: string | null;
+    /** True when availability comes from a labelled sandbox scheduler rather than a live one. */
+    sandbox?: boolean;
+};
+
+export type AppointmentCard = {
+    kind: 'appointment';
+    id: string;
+    type: string;
+    status: string;
+    outcome: 'requested' | 'pending' | 'confirmed';
+    date: string | null;
+    time: string | null;
+    label: string;
+    verified: boolean;
+    /** Present only with a provider confirmation. */
+    providerRef?: string | null;
+    providerName?: string | null;
+    rooftopName?: string | null;
+    department?: string | null;
+    timezone?: string | null;
+    startsAt?: string | null;
+    sandbox?: boolean;
+};
+
+export type LeadSubmission = {
+    formId: string;
+    firstName: string;
+    lastName: string;
+    email?: string;
+    phone?: string;
+    preferredChannel: ContactChannel;
+    consents: Array<{ channel: ContactChannel; granted: boolean; version: string }>;
+};
+
+export type AppointmentSelection = {
+    pickerId: string;
+    slotId?: string;
+    requestedDate?: string;
+    requestedWindow?: AppointmentWindow;
+};
+
 export type Card =
-    | { kind: 'appointment'; id: string; type: string; status: string; outcome: 'requested' | 'pending' | 'confirmed'; date: string | null; time: string | null; label: string; verified: boolean }
+    | AppointmentCard
+    | LeadFormCard
+    | AppointmentPickerCard
     | { kind: 'credit_application'; label: string; url: string; providerName: string | null; cta?: string; note?: string; preview?: boolean }
     | {
           kind: 'otd_quote';
@@ -92,6 +184,8 @@ export type ChatResponse = {
     conversation: { language: Lang; handoffState: string; aiPaused: boolean; pending: string };
     delivery: { urgent: boolean; toolCount: number; minTypingMs: number; maxTypingMs: number };
     conversationId?: string;
+    /** True when the server minted a fresh id for this turn (widget should replace any prior id). */
+    conversationIdIssued?: boolean;
 };
 
 export type PageContext = {
@@ -117,5 +211,17 @@ export type UiMessage =
           isError?: boolean;
           author?: 'ai' | 'staff' | 'system';
           displayName?: string | null;
+          /** Set while text is still arriving, and when the customer stopped a reply early. */
+          streaming?: boolean;
+          stopped?: boolean;
           at: number;
       };
+
+/** Typed server-sent events for POST /chat/stream (AMQUR's own envelope; additive to POST /chat). */
+export type StreamEvent =
+    | { type: 'turn.started'; turnId: string; conversationId?: string; conversationIdIssued?: boolean }
+    | { type: 'status'; phase: 'thinking' | 'checking' | 'composing'; label?: string }
+    | { type: 'text.delta'; index: number; text: string }
+    | { type: 'text.done'; index: number }
+    | { type: 'turn.completed'; response: ChatResponse }
+    | { type: 'turn.error'; code: string; message: string; retryable?: boolean };

@@ -9,7 +9,8 @@ export function Storefront(props: {
     welcome: string;
     pageContext: PageContext;
     departments: { sales: boolean; service: boolean; parts: boolean };
-    onPick: (action: 'sales' | 'service' | 'parts' | 'vdp') => void;
+    canAskForPerson?: boolean;
+    onPick: (action: 'sales' | 'service' | 'parts' | 'vdp' | 'human') => void;
 }) {
     const [status, setStatus] = useState<StoreStatus>({ known: false });
     const [spots, setSpots] = useState<Spotlight[]>([]);
@@ -45,13 +46,13 @@ export function Storefront(props: {
                     <p className="amq-small">{sp.body}</p>
                     {sp.linkUrl && (
                         <a className="amq-linkbtn" href={sp.linkUrl} target="_blank" rel="noopener noreferrer">
-                            {props.lang === 'es' ? 'Más información' : 'Learn more'}
+                            {c(props.lang, 'learnMore')}
                         </a>
                     )}
                     {sp.disclaimer && <p className="amq-muted amq-small">{sp.disclaimer}</p>}
                 </section>
             ))}
-            <div className="amq-depts" role="group" aria-label="Departments">
+            <div className="amq-depts" role="group" aria-label={c(props.lang, 'departments')}>
                 {props.departments.sales && (
                     <button type="button" className="amq-dept" onClick={() => props.onPick('sales')}>
                         {c(props.lang, 'sales')}
@@ -68,6 +69,11 @@ export function Storefront(props: {
                     </button>
                 )}
             </div>
+            {props.canAskForPerson && (
+                <button type="button" className="amq-linkbtn" onClick={() => props.onPick('human')}>
+                    {c(props.lang, 'talkToPerson')}
+                </button>
+            )}
         </div>
     );
 }

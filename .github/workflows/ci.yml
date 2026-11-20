@@ -97,6 +97,38 @@ jobs:
           - run_url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           EOF
 
+  sandbox-e2e:
+    # The built bundle in Chromium, Firefox and WebKit against e2e/sandbox/sandbox-server.mjs: a loopback,
+    # dependency-free stand-in for the API that serves synthetic, labelled demo data only.
+    # Needs no backend, database, secrets or network beyond the browser download.
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium firefox webkit
+      - run: npm run build
+      - name: Sandbox journeys, accessibility and host isolation (five viewports)
+        run: npm run test:sandbox
+      # WebKit and Firefox each caught a real defect Chromium did not (focus leaving the
+      # dialog on Tab; a squeezed send button at 320px), so they stay in the gate.
+      - name: Same suite in Firefox
+        run: SANDBOX_BROWSER=firefox npm run test:sandbox
+      - name: Same suite in WebKit
+        run: SANDBOX_BROWSER=webkit npm run test:sandbox
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sandbox-playwright-report
+          path: |
+            playwright-report-sandbox/
+            test-results-sandbox/
+          if-no-files-found: ignore
+
   staging-e2e:
     # On-demand full browser matrix (Chromium/Firefox/WebKit + mobile
     # viewports + a11y) against the staging widget host. Manual because it

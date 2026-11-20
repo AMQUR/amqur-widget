@@ -38,10 +38,16 @@ describe('production embed loader safety', () => {
     expect(embed).not.toMatch(/DATABASE_URL|JWT_SECRET|REDIS_URL|TEKION_/);
   });
 
-  it('reads only data-tenant / data-location / data-locale', () => {
+  it('reads only data-tenant / data-location / data-locale and the expectation attribute', () => {
     expect(embed).toContain("getAttribute('data-tenant')");
     expect(embed).toContain("getAttribute('data-location')");
     expect(embed).toContain("getAttribute('data-locale')");
+    // The attribute list is asserted on the source: cdn/public/embed.js is a stamped artefact
+    // that is regenerated at image build time and may predate the source.
+    expect(source).toContain("getAttribute('data-expect-api-origin')");
+    // Every attribute the loader reads is one of these four.
+    const read = [...source.matchAll(/getAttribute\('([^']+)'\)/g)].map((m) => m[1]);
+    expect([...new Set(read)].sort()).toEqual(['data-expect-api-origin', 'data-locale', 'data-location', 'data-tenant']);
     expect(embed).toContain('script[src*="embed.js"][data-tenant]');
   });
 
@@ -76,5 +82,85 @@ describe('production embed loader safety', () => {
   it('source retains build placeholders for RELEASE_SHA and BUILD_TIME', () => {
     expect(source).toContain('RELEASE_SHA');
     expect(source).toContain('BUILD_TIME');
+  });
+});
+
+/**
+ * Behavioural checks: the loader source is executed in a minimal fake page.
+ * The point is that a page can make the loader refuse, but can never redirect it.
+ */
+describe('embed loader: expected API origin', () => {
+  const source = fs.readFileSync(sourcePath, 'utf8');
+
+  function run(attrs: Record<string, string>) {
+    const appended: Array<{ src: string }> = [];
+    const errors: unknown[] = [];
+    const inits: Array<Record<string, unknown>> = [];
+    const script = { tagName: 'SCRIPT', getAttribute: (n: string) => (n in attrs ? attrs[n] : null) };
+    const win: Record<string, unknown> = {};
+    const doc = {
+      currentScript: script,
+      readyState: 'complete',
+      querySelector: () => null,
+      createElement: () => {
+        const el: { src: string; onload?: () => void } = { src: '' };
+        return el;
+      },
+      head: {
+        appendChild: (el: { src: string; onload?: () => void }) => {
+          appended.push(el);
+          win.AMQUR = { init: (o: Record<string, unknown>) => (inits.push(o), Promise.resolve()), destroy: () => undefined };
+          el.onload?.();
+        },
+      },
+      addEventListener: () => undefined,
+    };
+    const fn = new Function('window', 'document', 'console', 'URL', 'Promise', source.replace(/\}\)\(window, document\);\s*$/, '})(window, document);'));
+    fn(win, doc, { error: (...a: unknown[]) => errors.push(a) }, URL, Promise);
+    return { appended, errors, inits, win };
+  }
+  const settle = () => new Promise((r) => setTimeout(r, 0));
+
+  it('boots against its own baked-in API when the page states no expectation', async () => {
+    const r = run({ 'data-tenant': 'dial-auto-group' });
+    await settle();
+    expect(r.appended.map((e) => e.src)).toEqual(['https://widget.dialusnow.com/assistant-widget.iife.js']);
+    expect(r.inits).toEqual([{ apiBaseUrl: 'https://api.dialusnow.com/api', tenantSlug: 'dial-auto-group', locationSlug: 'main', locale: 'en' }]);
+  });
+
+  it('boots when the expectation equals the baked-in API origin', async () => {
+    const r = run({ 'data-tenant': 'dial-auto-group', 'data-expect-api-origin': 'https://API.dialusnow.com/' });
+    await settle();
+    expect(r.inits).toHaveLength(1);
+    expect(r.inits[0]!.apiBaseUrl).toBe('https://api.dialusnow.com/api');
+  });
+
+  it.each([
+    'https://staging-api.dialusnow.com',
+    'http://127.0.0.1:3001',
+    'https://api.dialusnow.com.evil.example',
+    'https://api.dialusnow.com/api',
+    'https://user:pw@api.dialusnow.com',
+    'not a url',
+  ])('refuses to start when the page expects %s, and loads nothing', async (expected) => {
+    const r = run({ 'data-tenant': 'dial-auto-group', 'data-expect-api-origin': expected });
+    await settle();
+    expect(r.appended).toEqual([]);
+    expect(r.inits).toEqual([]);
+    expect(JSON.stringify(r.errors)).toContain('api_origin_mismatch');
+    expect(r.win.__AMQUR_EMBED_BOOTSTRAPPED__).not.toBe(true);
+  });
+
+  it('never uses the expectation as the API address', async () => {
+    // Even a matching expectation contributes nothing to the init call beyond permission.
+    const r = run({ 'data-tenant': 'dial-auto-group', 'data-expect-api-origin': 'https://api.dialusnow.com' });
+    await settle();
+    expect(Object.keys(r.inits[0]!).sort()).toEqual(['apiBaseUrl', 'locale', 'locationSlug', 'tenantSlug']);
+    expect([...source.matchAll(/apiBaseUrl:\s*([A-Za-z_.$]+)/g)].map((m) => m[1])).toEqual(['API_BASE']);
+  });
+
+  it('exposes its environment and origins read-only for install checks', () => {
+    const r = run({ 'data-tenant': 'dial-auto-group' });
+    expect(r.win.AMQUR_EMBED).toMatchObject({ environment: 'production', apiOrigin: 'https://api.dialusnow.com', widgetOrigin: 'https://widget.dialusnow.com' });
   });
 });

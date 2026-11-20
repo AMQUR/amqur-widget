@@ -110,14 +110,15 @@ describe('generated snippets', () => {
 
 describe('embed loader build', () => {
   const sha = 'a'.repeat(40);
-  function build(env: string) {
+  function build(env: string, args: string[] = []) {
     const out = fs.mkdtempSync(path.join(os.tmpdir(), 'amqur-embed-'));
     execFileSync(
       process.execPath,
-      [path.join(root, 'scripts/build-embed-loader.mjs'), '--env', env, '--out', out],
+      [path.join(root, 'scripts/build-embed-loader.mjs'), '--env', env, '--out', out, ...args],
       { env: { ...process.env, APP_COMMIT_SHA: sha, APP_BUILD_TIME: '2026-11-18T00:00:00Z' } },
     );
     return {
+      out,
       js: fs.readFileSync(path.join(out, 'embed.js'), 'utf8'),
       manifest: JSON.parse(fs.readFileSync(path.join(out, 'embed-manifest.json'), 'utf8')),
     };
@@ -147,5 +148,31 @@ describe('embed loader build', () => {
 
   it('refuses an unknown environment', () => {
     expect(() => build('preview')).toThrow();
+  });
+
+  it('pins isolated staging embed and canary pages to the same deployment', () => {
+    const { out, js, manifest } = build('isolated-staging');
+    const api = 'https://backend-staging-staging-b699.up.railway.app';
+    const widget = 'https://widget-staging-staging.up.railway.app';
+    expect(manifest).toMatchObject({ environment: 'isolated-staging', apiHost: api, widgetHost: widget });
+    expect(js).toContain(`var WIDGET_HOST = '${widget}';`);
+    expect(js).toContain(`var API_HOST = '${api}';`);
+    const index = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
+    const redeem = fs.readFileSync(path.join(out, 'canary-redeem.html'), 'utf8');
+    expect(index).toContain(`var API_BASE = "${api}/api";`);
+    expect(index).toContain('Isolated Staging Canary');
+    expect(index).toContain('data-amqur-isolated-build=');
+    expect(index).not.toContain('Internal Employee Canary Host');
+    expect(redeem).toContain(`var api = "${api}";`);
+    expect(redeem).not.toContain('id="api"');
+    expect(redeem).toContain('protected isolated staging preview with synthetic data');
+    expect([js, index, redeem].join('\n')).not.toMatch(/https:\/\/(?:staging-)?(?:api|widget)\.dialusnow\.com/);
+  });
+
+  it('rejects host overrides and the CDN output for isolated staging', () => {
+    expect(() => build('isolated-staging', ['--api-host', 'https://api.dialusnow.com'])).toThrow(/only with --env local/);
+    expect(() => execFileSync(process.execPath, [
+      path.join(root, 'scripts/build-embed-loader.mjs'), '--env', 'isolated-staging', '--out', 'cdn/public',
+    ])).toThrow(/must never be written into the CDN/);
   });
 });

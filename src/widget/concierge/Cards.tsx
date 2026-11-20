@@ -1,9 +1,11 @@
 import { useId, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { Card, Lang } from './types';
+import type { AppointmentSelection, Card, Lang, LeadSubmission } from './types';
 import { c, money } from './copy';
+import { LeadForm } from './LeadForm';
+import { AppointmentPicker, AppointmentReceipt } from './AppointmentPicker';
 import { normalizeApiBaseUrl } from '../../connect';
-import { ExternalIcon, LockIcon } from '../icons';
+import { CaretIcon, ExternalIcon, LockIcon } from '../icons';
 
 /** Collapsible details — keeps ONE short disclosure visible and the full terms one tap away. */
 function Details({ label, children }: { label: string; children: ReactNode }) {
@@ -14,7 +16,7 @@ function Details({ label, children }: { label: string; children: ReactNode }) {
             <button type="button" className="amq-linkbtn" aria-expanded={open} aria-controls={id} onClick={() => setOpen((o) => !o)}>
                 {label}
                 <span aria-hidden className={`amq-caret${open ? ' amq-caret--open' : ''}`}>
-                    ▾
+                    <CaretIcon />
                 </span>
             </button>
             {open && (
@@ -27,21 +29,26 @@ function Details({ label, children }: { label: string; children: ReactNode }) {
 }
 
 /** Status cards. Visual language distinguishes REQUEST vs provider-CONFIRMED and never implies approval. */
-export function CardView({ card, lang, apiBaseUrl }: { card: Card; lang: Lang; apiBaseUrl: string }) {
+export type CardActions = {
+    /** True while a turn is in flight: interactive cards stop accepting input. */
+    busy?: boolean;
+    /** Only the newest interactive card accepts input; older ones are a record of what was asked. */
+    interactive?: boolean;
+    onLead?: (lead: LeadSubmission) => void;
+    onAppointment?: (selection: AppointmentSelection, display: string) => void;
+};
+
+export function CardView({ card, lang, apiBaseUrl, actions }: { card: Card; lang: Lang; apiBaseUrl: string; actions?: CardActions }) {
     switch (card.kind) {
-        case 'appointment': {
-            const tone = card.outcome === 'confirmed' ? 'ok' : card.outcome === 'pending' ? 'info' : 'neutral';
-            return (
-                <section className={`amq-card amq-card--${tone}`} aria-label={c(lang, 'appointment')}>
-                    <header>
-                        <span className="amq-card__eyebrow">{c(lang, 'appointment')}</span>
-                        <span className={`amq-chip amq-chip--${tone}`}>{card.outcome === 'confirmed' ? c(lang, 'confirmed') : card.outcome === 'pending' ? c(lang, 'pending') : c(lang, 'requested')}</span>
-                    </header>
-                    <div className="amq-card__title">{card.label}</div>
-                    {card.outcome !== 'confirmed' && <p className="amq-muted amq-small">{c(lang, 'requestNote')}</p>}
-                </section>
-            );
-        }
+        case 'appointment':
+            return <AppointmentReceipt card={card} lang={lang} />;
+        case 'lead_form':
+            // Without a handler (restored transcript, older message) the form is not offered again.
+            if (!actions?.onLead || actions.interactive === false) return null;
+            return <LeadForm card={card} lang={lang} disabled={actions.busy} onSubmit={actions.onLead} />;
+        case 'appointment_picker':
+            if (card.mode !== 'external_link' && (!actions?.onAppointment || actions.interactive === false)) return null;
+            return <AppointmentPicker card={card} lang={lang} disabled={actions?.busy} onSelect={actions?.onAppointment ?? (() => undefined)} />;
         case 'credit_application': {
             const href = /^https:\/\//.test(card.url) ? card.url : `${normalizeApiBaseUrl(apiBaseUrl)}${card.url}`;
             return (
@@ -119,7 +126,7 @@ export function CardView({ card, lang, apiBaseUrl }: { card: Card; lang: Lang; a
                     <p className="amq-muted amq-small">VIN {card.vin}</p>
                     <div className="amq-card__big">
                         {money(card.monthly, lang)}
-                        <span className="amq-muted">/mo</span>
+                        <span className="amq-muted">{c(lang, 'perMonth')}</span>
                     </div>
                     <div className="amq-muted amq-small">{c(lang, 'estimateLine', { term: card.termMonths, down: money(card.downPayment, lang) })}</div>
                     <p className="amq-muted amq-small">
@@ -133,7 +140,9 @@ export function CardView({ card, lang, apiBaseUrl }: { card: Card; lang: Lang; a
                             <dt>{c(lang, 'downPayment')}</dt>
                             <dd>{money(card.downPayment, lang)}</dd>
                             <dt>{c(lang, 'term')}</dt>
-                            <dd>{card.termMonths} mo</dd>
+                            <dd>
+                                {card.termMonths} {c(lang, 'months')}
+                            </dd>
                             <dt>{c(lang, 'rate')}</dt>
                             <dd>{card.aprSource === 'CUSTOMER' ? c(lang, 'yourRate', { apr: card.apr }) : c(lang, 'exampleRate', { apr: card.apr })}</dd>
                             <dt>{c(lang, 'taxesFees')}</dt>
@@ -196,9 +205,19 @@ export function CardView({ card, lang, apiBaseUrl }: { card: Card; lang: Lang; a
             );
         case 'hours':
             return (
-                <section className="amq-card" aria-label="Hours">
+                <section className="amq-card" aria-label={c(lang, 'hours')}>
                     {card.openNow != null && <span className={`amq-chip amq-chip--${card.openNow ? 'ok' : 'neutral'}`}>{card.openNow ? c(lang, 'openNow') : c(lang, 'closedNow')}</span>}
                     <div className="amq-small">{card.summary}</div>
+                </section>
+            );
+        case 'finance_request':
+            return (
+                <section className="amq-card" role="status" aria-label={c(lang, 'financeRequestTitle')}>
+                    <header>
+                        <span className="amq-card__eyebrow">{c(lang, 'financeRequestTitle')}</span>
+                        <span className="amq-chip amq-chip--neutral">{c(lang, 'requested')}</span>
+                    </header>
+                    <p className="amq-muted amq-small">{c(lang, 'financeRequestNote')}</p>
                 </section>
             );
         default:

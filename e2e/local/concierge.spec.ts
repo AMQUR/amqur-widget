@@ -210,8 +210,9 @@ test.describe('Concierge Canvas', () => {
         await page.reload();
         await page.getByRole('button', { name: /open assistant/i }).click();
         await expect(page.locator('.amq-msg--user').first()).toContainText('Wranglers');
-        // New conversation starts clean.
+        // New conversation starts clean (confirm dialog when a session exists).
         await page.getByRole('button', { name: /start a new conversation/i }).click();
+        await page.getByRole('button', { name: /start fresh/i }).click();
         await expect(page.locator('.amq-msg--user')).toHaveCount(0);
         await say(page, 'hi');
         const second = await page.evaluate((k) => JSON.parse(localStorage.getItem(k) ?? '{}').id, key);
