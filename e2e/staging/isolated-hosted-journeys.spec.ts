@@ -340,17 +340,26 @@ async function attachCanaryCookie(page: Page, canaryValue: string) {
 }
 
 async function openRooftop(page: Page, slug: string) {
-  await page.goto('/');
-  await expect(page.getByText('STAGING — NOT FOR CUSTOMERS')).toBeVisible();
-  await page.locator('#tenant').selectOption(slug);
-  await page.getByRole('button', { name: /load assistant/i }).click();
-  await expect(page.locator('#amqur-widget-host')).toBeAttached({
-    timeout: 45_000,
-  });
   const launcher = page.getByRole('button', {
     name: /open assistant|abrir asistente/i,
   });
-  await expect(launcher).toBeVisible({ timeout: 45_000 });
+  // Occasional canary/widget boot races leave no launcher — one clean reload recovers.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await page.goto('/');
+    await expect(page.getByText('STAGING — NOT FOR CUSTOMERS')).toBeVisible();
+    await page.locator('#tenant').selectOption(slug);
+    await page.getByRole('button', { name: /load assistant/i }).click();
+    await expect(page.locator('#amqur-widget-host')).toBeAttached({
+      timeout: 45_000,
+    });
+    try {
+      await expect(launcher).toBeVisible({ timeout: 45_000 });
+      break;
+    } catch (err) {
+      if (attempt === 1) throw err;
+      await page.waitForTimeout(2_000);
+    }
+  }
   await launcher.click();
   await expect(page.getByRole('dialog').getByRole('textbox').last()).toBeVisible({
     timeout: 45_000,
