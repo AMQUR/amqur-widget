@@ -206,7 +206,7 @@ export function ChatView() {
                             else if (a === 'vdp' && pageContext.vin && f.inventory === true) void conv.send('', { action: 'vehicle_detail', vin: pageContext.vin, display: c(lang, 'welcomeVdp') });
                             // No connected inventory: an ordinary question; the page's published listing rides along as page context.
                             else if (a === 'vdp') void conv.send(c(lang, 'aboutThisVehicle'));
-                            else if (a !== 'vdp') void conv.send('', { action: a, display: c(lang, a) });
+                            else void conv.send('', { action: a, display: c(lang, a) });
                         }}
                     />
                 )}
