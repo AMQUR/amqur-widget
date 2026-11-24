@@ -166,3 +166,41 @@ describe('journey tray', () => {
         expect(html).not.toContain('Finance estimate');
     });
 });
+
+describe('dealership handoff card', () => {
+    const card: Card = {
+        kind: 'dealership',
+        storeId: 'chevy',
+        name: 'Dial Chevy of Chicago',
+        sideOfTown: 'South Side',
+        brands: ['Chevrolet'],
+        address: '6603 S Western Ave, Chicago, IL 60636',
+        focus: 'new',
+        note: "Opens this store's current inventory on its own website. Confirm availability and price with the store.",
+        links: [
+            { key: 'newInventory', label: 'View new inventory', url: 'https://www.dialchevy.com/searchnew.aspx', primary: true },
+            { key: 'usedInventory', label: 'View used inventory', url: 'https://www.dialchevy.com/searchused.aspx' },
+            { key: 'callSales', label: 'Call sales 773-423-3000', url: 'tel:+17734233000' },
+            { key: 'bad', label: 'Bad', url: 'javascript:alert(1)' },
+            { key: 'plain', label: 'Plain', url: 'http://insecure.example/' },
+        ],
+    };
+    it('renders the store, its links in a new tab and its phone as a tel link', () => {
+        const html = render(card);
+        expect(html).toContain('Dial Chevy of Chicago');
+        expect(html).toContain('South Side');
+        expect(html).toContain('href="https://www.dialchevy.com/searchnew.aspx"');
+        expect(html).toContain('href="tel:+17734233000"');
+        expect(html.match(/target="_blank"/g)).toHaveLength(2);
+        expect(html.match(/rel="noopener noreferrer"/g)).toHaveLength(2);
+        expect(html).toContain('Confirm availability and price with the store');
+    });
+    it('drops any link that is not https or tel', () => {
+        const html = render(card);
+        expect(html).not.toContain('javascript:');
+        expect(html).not.toContain('insecure.example');
+    });
+    it('renders nothing when no safe link remains', () => {
+        expect(render({ ...card, links: [{ key: 'x', label: 'x', url: 'ftp://x' }] } as Card)).toBe('');
+    });
+});

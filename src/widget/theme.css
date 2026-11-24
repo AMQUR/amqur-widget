@@ -820,3 +820,14 @@
 .amqur[data-display="inline"] { height: 100%; }
 .amqur[data-display="inline"] .amqur-portal { position: static; inset: auto; z-index: auto; display: block; height: 100%; }
 .amqur[data-display="inline"] .amqur-panel { position: relative; inset: auto; z-index: auto; width: 100%; height: 100%; max-height: none; padding: 0; border-radius: 0; box-shadow: none; animation: none; }
+
+/* Dealership handoff card: verified links to a store's own website and phone. */
+.amq-card--dealer header { align-items: flex-start; }
+.amq-card--dealer .amq-chip { flex: none; white-space: nowrap; }
+.amq-dealer__meta { display: flex; flex-direction: column; gap: 2px; }
+.amq-dealer__brands { font-size: 13px; font-weight: 600; }
+.amq-dealer__primary { gap: 8px; }
+.amq-dealer__links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.amq-dealer__link { min-height: 44px; padding: 6px 10px; gap: 6px; font-size: 12.5px; line-height: 1.2; text-align: left; justify-content: flex-start; white-space: normal; overflow-wrap: anywhere; }
+.amq-dealer__link svg, .amq-dealer__primary svg { flex: none; width: 14px; height: 14px; }
+.amq-dealer__link:last-child:nth-child(odd) { grid-column: 1 / -1; }

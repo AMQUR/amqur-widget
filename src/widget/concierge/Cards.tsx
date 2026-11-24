@@ -5,7 +5,8 @@ import { c, money } from './copy';
 import { LeadForm } from './LeadForm';
 import { AppointmentPicker, AppointmentReceipt } from './AppointmentPicker';
 import { normalizeApiBaseUrl } from '../../connect';
-import { CaretIcon, ExternalIcon, LockIcon } from '../icons';
+import { CaretIcon, ExternalIcon, LockIcon, PhoneIcon } from '../icons';
+import { safeHref } from './mdParse';
 
 /** Collapsible details — keeps ONE short disclosure visible and the full terms one tap away. */
 function Details({ label, children }: { label: string; children: ReactNode }) {
@@ -220,6 +221,48 @@ export function CardView({ card, lang, apiBaseUrl, actions }: { card: Card; lang
                     <p className="amq-muted amq-small">{c(lang, 'financeRequestNote')}</p>
                 </section>
             );
+        case 'dealership': {
+            // Only https and tel links are rendered; anything else from the wire is dropped.
+            const links = card.links
+                .map((l) => ({ ...l, href: safeHref(l.url) }))
+                .filter((l): l is typeof l & { href: string } => !!l.href && (l.href.startsWith('https://') || l.href.startsWith('tel:')));
+            if (!links.length) return null;
+            const primary = links.find((l) => l.primary) ?? links[0]!;
+            const rest = links.filter((l) => l !== primary);
+            const anchor = (l: (typeof links)[number], cls: string) => {
+                const tel = l.href.startsWith('tel:');
+                return (
+                    <a
+                        key={l.key}
+                        className={cls}
+                        href={l.href}
+                        {...(tel ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
+                        data-amq-link={l.key}
+                        data-amq-store={card.storeId}
+                    >
+                        {tel && <PhoneIcon aria-hidden />}
+                        <span>{l.label}</span>
+                        {!tel && <ExternalIcon aria-hidden />}
+                        {!tel && <span className="amq-sr"> ({c(lang, 'creditNewTab')})</span>}
+                    </a>
+                );
+            };
+            return (
+                <section className="amq-card amq-card--dealer" aria-label={card.name}>
+                    <header>
+                        <div className="amq-card__title">{card.name}</div>
+                        <span className="amq-chip amq-chip--neutral">{card.sideOfTown}</span>
+                    </header>
+                    <div className="amq-dealer__meta">
+                        <span className="amq-dealer__brands">{card.brands.join(' · ')}</span>
+                        <span className="amq-muted amq-small">{card.address}</span>
+                    </div>
+                    {anchor(primary, 'amq-btn amq-btn--primary amq-btn--block amq-btn--lg amq-dealer__primary')}
+                    {rest.length > 0 && <div className="amq-dealer__links">{rest.map((l) => anchor(l, 'amq-btn amq-dealer__link'))}</div>}
+                    <p className="amq-muted amq-small">{card.note}</p>
+                </section>
+            );
+        }
         default:
             return null;
     }

@@ -148,6 +148,21 @@ export type Card =
       }
     | { kind: 'finance_request'; id: string; status: string }
     | {
+          /** Verified store handoff: buttons to the store's own website pages and phone. Not a vehicle. */
+          kind: 'dealership';
+          storeId: string;
+          name: string;
+          sideOfTown: string;
+          brands: string[];
+          address: string;
+          focus: string;
+          note: string;
+          links: Array<{ key: string; label: string; url: string; primary?: boolean }>;
+          sourceRecordId?: string;
+          asOf?: string;
+          verified?: boolean;
+      }
+    | {
           kind: 'trade';
           id: string;
           summary: string;
