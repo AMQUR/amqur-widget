@@ -1,8 +1,8 @@
 # Isolated staging widget build
 
-Use `Dockerfile.isolated-staging` for the isolated Railway canary host. That file hard-codes `AMQUR_WIDGET_BUILD_PROFILE=isolated-staging` and copies `staging/public/index.isolated.html` so Railway cannot silently fall back to the shared `staging-api.dialusnow.com` profile. Keep `Dockerfile.staging` for the canonical shared staging release candidate. Confirm the build log names `Dockerfile.isolated-staging` (override `railway.toml` `dockerfilePath` for the widget-staging service). Set release identity from the reviewed widget commit and compare `/version.json` and `/embed-manifest.json` with that commit after deployment.
+Use `Dockerfile.isolated-staging` for the isolated Railway staging host. That file hard-codes `AMQUR_WIDGET_BUILD_PROFILE=isolated-staging` and builds its HTML shell from `staging/public/index.isolated.html` (the private owner preview page, see below) so Railway cannot silently fall back to the shared `staging-api.dialusnow.com` profile. Keep `Dockerfile.staging` for the canonical shared staging release candidate. Confirm the build log names `Dockerfile.isolated-staging` (override `railway.toml` `dockerfilePath` for the widget-staging service). Set release identity from the reviewed widget commit and compare `/version.json` and `/embed-manifest.json` with that commit after deployment.
 
-The isolated profile pins the loader, internal canary page and invite redemption to the existing `amqur-platform-staging/staging` hosts.
+The isolated profile pins the loader, the private owner page and invite redemption to the existing `amqur-platform-staging/staging` hosts.
 
 - Widget origin `https://widget-staging-staging.up.railway.app`
 - API origin `https://backend-staging-staging-b699.up.railway.app`
@@ -28,3 +28,24 @@ The handoff ledger records the isolated database backup `amqur-platform-staging_
 3. Verify private Postgres and Redis references for API and worker, and resolve the existing public Postgres TCP proxy. Verify the migration checksums and restore a fresh backup to a disposable database before migrating. Use a reviewed synthetic fixture seed for this environment. The local demo seed refuses a non-loopback database host.
 4. Confirm `DEPLOYMENT_TIER=staging`, exact browser origins, separate credentials and worker process roles. Keep live customer messaging, CRM, ADF delivery and scheduler integrations disabled. Validate worker flows with reviewed synthetic fixtures and an isolated sink, and verify denied live egress before exercise.
 5. Validate the hosted widget, API, worker, group preview and operator console together. Capture full browser network traces with synthetic data and confirm the widget calls the pinned API, unauthorized traffic is denied, and no traffic reaches canonical staging or live providers. Exercise application rollback and confirm schema compatibility separately.
+
+## Private owner preview page (both hosted profiles)
+
+The HTML shell of the hosted images is a private preview page for the dealership owner, not an engineering page. Source: `staging/public/index.isolated.html` (template), `owner-page.css`, `owner-page.js`. `scripts/build-embed-loader.mjs` stamps the template per profile and refuses to write a page with leftover placeholders, inline script or style, a visible URL or hostname, or more than one status strip.
+
+| | `isolated-staging` | `production-private` |
+|---|---|---|
+| Dockerfile | `Dockerfile.isolated-staging` | `Dockerfile.production-private` |
+| Hosts | pinned in the build script | required build args `AMQUR_API_HOST`, `AMQUR_WIDGET_HOST` (https; not a staging host; not `*.dialusnow.com`) |
+| Status strip | demonstration data, clearly labeled | live inventory, CRM and scheduling connections not switched on yet |
+| Stores | five rooftops + Dial Auto Group | five rooftops |
+| `/canary-redeem.html` | shipped (behind Basic Auth) | not shipped (404); build fails if present |
+| Markers on `<html>` | `data-amqur-profile="isolated-staging"`, `data-amqur-isolated-build="<sha7>"` | `data-amqur-profile="production-private"`, `data-amqur-isolated-build="<sha7>"` |
+
+Runtime (both): `EMPLOYEE_BASIC_AUTH_USER` and `EMPLOYEE_BASIC_AUTH_PASSWORD` protect `/`, `/index.html`, `/owner-page.css`, `/owner-page.js` (and `/canary-redeem.html` on staging). When either is unset the entrypoint writes a locked htpasswd and every HTML request is 401. `/healthz`, the widget bundle, `embed.js`, the manifest, `version.json` and fonts stay public. The entrypoint reads the API origin from `embed-manifest.json` and refuses to start without a valid one; the shell is served with `Content-Security-Policy` (`script-src 'self'`, `connect-src` limited to that API origin, `frame-ancestors 'none'`) and `Permissions-Policy`.
+
+The page boots the widget inline for the selected store with `AMQUR.destroy()` / `AMQUR.init({ display: 'inline', container })`, default Dial Chevy of Chicago, and sends example prompts with `AMQUR.send()`. It makes no invite, eligibility or other API call of its own.
+
+**Token gate.** The page needs an ordinary `POST /api/public/widget-token` to succeed from the widget host's origin. That requires (backend, not this repo): the widget origin in `CORS_ORIGINS` and in each store tenant's `allowedOrigins`, and the widget origin **not** listed in `CANARY_STRICT_ORIGINS` while `CANARY_EMPLOYEE_ENABLED=true`. With the strict employee canary on for the widget origin, the token request is refused (`403 Employee canary required`) and the page shows its "Couldn't connect" state; the invite cookie is per store and expires, so it is not a workable path for an owner.
+
+Local check of a built image (page, headers, states, keyboard, axe, CSP) — see `playwright.owner.config.ts`. Screenshots: `e2e/owner-page/screenshots/`.

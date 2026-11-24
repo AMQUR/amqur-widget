@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Isolated Railway staging canary host (amqur-platform-staging).
+# Isolated Railway staging host (amqur-platform-staging): private owner preview page + widget assets.
 # Pins embed loader to backend-staging-staging-b699.up.railway.app — never shared staging-api.
 
 FROM node:22-bookworm-slim AS build
@@ -27,8 +27,14 @@ RUN test "$AMQUR_WIDGET_BUILD_PROFILE" = "isolated-staging" \
   && test ! -e /out/amqur-canary-loader.js \
   && node scripts/build-embed-loader.mjs --env isolated-staging --out /out \
   && node -e 'const fs=require("fs"); const v={name:"amqur-widget",version:process.env.APP_RELEASE_VERSION||"0.2.0",commitSha:process.env.APP_COMMIT_SHA||"unknown",buildTime:process.env.APP_BUILD_TIME||"unknown",releaseId:process.env.APP_RELEASE_ID||"unknown"}; fs.writeFileSync("/out/version.json", JSON.stringify(v,null,2)+"\n");' \
-  && grep -F 'Isolated Staging Canary' /out/index.html \
+  && grep -F 'data-amqur-profile="isolated-staging"' /out/index.html \
   && grep -F 'data-amqur-isolated-build=' /out/index.html \
+  && grep -F 'data-amqur-status="isolated-staging"' /out/index.html \
+  && grep -F 'demonstration data, clearly labeled' /out/index.html \
+  && grep -F 'data-amqur-api-origin="https://backend-staging-staging-b699.up.railway.app"' /out/index.html \
+  && ! grep -F 'data-amqur-status="production-private"' /out/index.html \
+  && ! grep -F '__AMQUR_' /out/index.html \
+  && test -f /out/owner-page.css && test -f /out/owner-page.js && test -f /out/canary-redeem.html \
   && grep -F 'backend-staging-staging-b699.up.railway.app' /out/embed-manifest.json \
   && ! grep -F 'https://api.dialusnow.com' /out/index.html \
   && ! grep -F 'Internal Employee Canary Host' /out/index.html \
@@ -46,6 +52,8 @@ RUN chmod +x /docker-entrypoint-amqur.sh \
   && test -f /usr/share/nginx/html/embed.js \
   && test -f /usr/share/nginx/html/embed-manifest.json \
   && test -f /usr/share/nginx/html/version.json \
-  && grep -F 'Isolated Staging Canary' /usr/share/nginx/html/index.html
+  && test -f /usr/share/nginx/html/owner-page.css \
+  && test -f /usr/share/nginx/html/owner-page.js \
+  && grep -F 'data-amqur-profile="isolated-staging"' /usr/share/nginx/html/index.html
 EXPOSE 80
 CMD ["/docker-entrypoint-amqur.sh"]

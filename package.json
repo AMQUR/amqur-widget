@@ -20,7 +20,8 @@
     "test:sandbox": "playwright test --config playwright.sandbox.config.ts",
     "sandbox": "node e2e/sandbox/sandbox-server.mjs",
     "test:integration": "playwright test --config playwright.integration.config.ts",
-    "test:isolated-hosted": "playwright test --config playwright.isolated.config.ts"
+    "test:isolated-hosted": "playwright test --config playwright.isolated.config.ts",
+    "test:owner-page": "playwright test --config playwright.owner.config.ts"
   },
   "dependencies": {
     "react": "^19.2.0",

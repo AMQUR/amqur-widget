@@ -511,6 +511,10 @@
 .amq-typing { padding: 12px 14px; gap: 5px; border-radius: 18px 18px 18px 6px; }
 .amq-typing > span[aria-hidden] { width: 7px; height: 7px; }
 .amq-typing__label { font-size: 12px; color: var(--amqur-muted); margin-left: 4px; }
+/* The label is aria-hidden like the dots (the status text is the bubble's aria-label), so the dot
+ * rules above match it too. Without this it rendered as a fourth 7px dot with its text spilling
+ * out one word per line. */
+.amq-typing > span.amq-typing__label[aria-hidden] { width: auto; height: auto; background: none; animation: none; opacity: 1; white-space: nowrap; }
 
 .amq-quick { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 8px; }
 .amq-chip--quick { cursor: pointer; border: 1px solid var(--amqur-border); background: var(--amqur-surface); }
@@ -808,3 +812,11 @@
 @media (forced-colors: active) {
     .amq-md__code, .amq-md__table { border: 1px solid CanvasText; }
 }
+
+/* ───────────── Inline display ─────────────
+ * `AMQUR.init({ display: 'inline', container })`: the chat fills the host's element instead of
+ * floating over the page. These rules outrank the floating and phone-sheet rules above. */
+:host([data-display="inline"]) { height: 100% !important; }
+.amqur[data-display="inline"] { height: 100%; }
+.amqur[data-display="inline"] .amqur-portal { position: static; inset: auto; z-index: auto; display: block; height: 100%; }
+.amqur[data-display="inline"] .amqur-panel { position: relative; inset: auto; z-index: auto; width: 100%; height: 100%; max-height: none; padding: 0; border-radius: 0; box-shadow: none; animation: none; }

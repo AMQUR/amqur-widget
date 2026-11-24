@@ -5,10 +5,14 @@ import { useWidget } from './WidgetContext';
 import { detectLocale } from './i18n';
 import { c } from './concierge/copy';
 import { resolveTheme } from './theme';
+import { subscribeWidgetCommands } from './commands';
 
 export function WidgetShell() {
-  const [open, setOpen] = useState(false);
   const { bootstrap, config } = useWidget();
+  // Inline display: the chat fills the host's container and is always open.
+  const inline = config.display === 'inline';
+  const [openState, setOpen] = useState(false);
+  const open = inline || openState;
   const portalRef = useRef<HTMLDivElement | null>(null);
   const launcherRef = useRef<HTMLButtonElement | null>(null);
   const prevOverflow = useRef<string | null>(null);
@@ -24,7 +28,22 @@ export function WidgetShell() {
   }, []);
   const toggle = useCallback(() => setOpen((v) => !v), []);
 
+  // Host-page commands (AMQUR.open / close / send). A sent prompt opens the chat; the chat
+  // itself picks the text up once it is on screen.
+  useEffect(
+    () =>
+      subscribeWidgetCommands((command) => {
+        if (command === 'close') {
+          if (!inline) close();
+        } else {
+          setOpen(true);
+        }
+      }),
+    [inline, close],
+  );
+
   useEffect(() => {
+    if (inline) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && open) {
         e.stopPropagation();
@@ -33,7 +52,7 @@ export function WidgetShell() {
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [open, close]);
+  }, [open, close, inline]);
 
   const theme = resolveTheme(bootstrap.branding?.theme, config.theme);
 
@@ -54,6 +73,8 @@ export function WidgetShell() {
 
   // Lock host page scroll while the mobile sheet (or desktop panel) is open.
   useEffect(() => {
+    // An inline chat is part of the page: the page keeps scrolling.
+    if (inline) return;
     if (!open) {
       if (prevOverflow.current != null) {
         document.documentElement.style.overflow = prevOverflow.current;
@@ -69,12 +90,14 @@ export function WidgetShell() {
         prevOverflow.current = null;
       }
     };
-  }, [open]);
+  }, [open, inline]);
 
   return (
     <div className="amqur-portal" ref={portalRef} data-open={open ? "true" : "false"}>
-      <LauncherButton ref={launcherRef} open={open} onToggle={toggle} openLabel={c(lang, 'openAssistant')} closeLabel={c(lang, 'closeAssistant')} />
-      {open ? <WidgetPanel open onClose={close} lang={lang} /> : null}
+      {inline ? null : (
+        <LauncherButton ref={launcherRef} open={open} onToggle={toggle} openLabel={c(lang, 'openAssistant')} closeLabel={c(lang, 'closeAssistant')} />
+      )}
+      {open ? <WidgetPanel open onClose={close} lang={lang} inline={inline} /> : null}
     </div>
   );
 }

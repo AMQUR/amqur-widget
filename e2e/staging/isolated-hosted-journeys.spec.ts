@@ -339,35 +339,48 @@ async function attachCanaryCookie(page: Page, canaryValue: string) {
   });
 }
 
+/** The assistant renders inline on the private owner page: a region, not a modal dialog. */
+function assistantPanel(page: Page) {
+  return page.locator('#amqur-widget-host .amqur-panel');
+}
+
 async function openRooftop(page: Page, slug: string) {
-  const launcher = page.getByRole('button', {
-    name: /open assistant|abrir asistente/i,
-  });
-  // Occasional canary/widget boot races leave no launcher — one clean reload recovers.
+  const assistant = page.locator('#assistant');
+  // The page connects the default store on load; the canary session is per rooftop, so that
+  // first attempt may be refused. Choosing the rooftop under test reconnects for it.
   for (let attempt = 0; attempt < 2; attempt++) {
     await page.goto('/');
-    await expect(page.getByText('STAGING — NOT FOR CUSTOMERS')).toBeVisible();
-    await page.locator('#tenant').selectOption(slug);
-    await page.getByRole('button', { name: /load assistant/i }).click();
-    await expect(page.locator('#amqur-widget-host')).toBeAttached({
-      timeout: 45_000,
-    });
+    await expect(page.locator('html')).toHaveAttribute(
+      'data-amqur-profile',
+      'isolated-staging',
+    );
+    await expect(page.locator('[data-amqur-status="isolated-staging"]')).toContainText(
+      'demonstration data, clearly labeled',
+    );
+    const radio = page.locator(`input[name="store"][value="${slug}"]`);
+    if (!(await radio.isChecked())) {
+      await page.locator(`label.store:has(input[value="${slug}"])`).click();
+    }
+    await expect(assistant).toHaveAttribute('data-store', slug);
     try {
-      await expect(launcher).toBeVisible({ timeout: 45_000 });
+      await expect(assistant).toHaveAttribute('data-state', 'ready', {
+        timeout: 45_000,
+      });
       break;
     } catch (err) {
       if (attempt === 1) throw err;
+      // Occasional canary/widget boot races — one clean reload recovers.
       await page.waitForTimeout(2_000);
     }
   }
-  await launcher.click();
-  await expect(page.getByRole('dialog').getByRole('textbox').last()).toBeVisible({
+  await expect(page.locator('#amqur-widget-host')).toBeAttached();
+  await expect(assistantPanel(page).getByRole('textbox').last()).toBeVisible({
     timeout: 45_000,
   });
 }
 
 async function say(page: Page, text: string) {
-  const dialog = page.getByRole('dialog');
+  const dialog = assistantPanel(page);
   const log = dialog.getByRole('log');
   const before = await log.locator('p').count();
   const input = dialog.getByRole('textbox').last();
@@ -417,7 +430,7 @@ test.describe('isolated hosted widget — security probes', () => {
     }
   });
 
-  test('axe: open assistant has no serious/critical WCAG violations', async ({
+  test('axe: inline assistant has no serious/critical WCAG violations', async ({
     page,
     playwright,
   }) => {
@@ -514,8 +527,8 @@ test.describe('isolated hosted widget — five rooftops EN/ES', () => {
       await say(page, 'What vehicles do you have in stock?');
       vehicles = page.getByRole('region', { name: /vehicles|vehículos/i }).last();
       await expect(vehicles).toBeVisible({ timeout: 60_000 });
-      // Branding / store identity on the open dialog
-      await expect(page.getByRole('dialog')).toContainText(
+      // Branding / store identity on the assistant panel
+      await expect(assistantPanel(page)).toContainText(
         new RegExp(rooftop.name.split(' ')[0], 'i'),
       );
 
@@ -612,14 +625,13 @@ test.describe('isolated hosted widget — five rooftops EN/ES', () => {
         page.getByText(/canceled that appointment|cancelé esa solicitud/i),
       ).toBeVisible({ timeout: 60_000 });
 
-      // Keyboard: Escape returns focus to the launcher (desktop engines only).
+      // Inline assistant: Escape does not dismiss it, and there is no launcher to return to.
       if (!/mobile|tablet/i.test(testInfo.project.name)) {
         await page.keyboard.press('Escape');
-        const launcher = page.getByRole('button', {
-          name: /open assistant|abrir asistente/i,
-        });
-        await expect(launcher).toBeVisible({ timeout: 15_000 });
-        await expect(launcher).toBeFocused({ timeout: 5_000 });
+        await expect(assistantPanel(page)).toBeVisible();
+        await expect(
+          page.getByRole('button', { name: /open assistant|abrir asistente/i }),
+        ).toHaveCount(0);
       }
     });
   }

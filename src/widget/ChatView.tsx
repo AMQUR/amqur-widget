@@ -17,6 +17,7 @@ import type { MarkdownLabels } from './concierge/Markdown';
 import { markdownToPlainText } from './concierge/mdParse';
 import { nextPinned } from './concierge/scrollPin';
 import type { Lang } from './concierge/types';
+import { subscribeWidgetCommands, takePendingPrompt } from './commands';
 
 function initialLang(cfgLocale?: string, locales?: string[]): Lang {
     const pick = (cfgLocale ?? '').toLowerCase();
@@ -126,6 +127,30 @@ export function ChatView() {
         requestAnimationFrame(() => autosize(inputRef.current));
         inputRef.current?.focus();
     };
+
+    // Prompts sent by the host page (AMQUR.send). Sent like typed text; if a reply is still in
+    // flight or the browser is offline the text goes into the composer rather than being lost.
+    const hostPrompt = useRef<(text: string) => void>(() => undefined);
+    useEffect(() => {
+        hostPrompt.current = (text: string) => {
+            if (conv.busy || !online) {
+                setInput(text);
+                requestAnimationFrame(() => autosize(inputRef.current));
+                return;
+            }
+            void conv.send(text);
+        };
+    });
+    useEffect(() => {
+        const drain = () => {
+            const text = takePendingPrompt();
+            if (text) hostPrompt.current(text);
+        };
+        drain();
+        return subscribeWidgetCommands((command) => {
+            if (command === 'send') drain();
+        });
+    }, []);
 
     const toggleCompare = (vin: string) => {
         const cur = loadCompareVins(config.tenantSlug, config.locationSlug);

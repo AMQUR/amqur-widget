@@ -11,6 +11,13 @@ import showroomCss from "./widget/theme-showroom.css?inline";
 import { getWidgetBootstrap } from "./connect";
 import { assetBaseFromScript, ensureShowroomFont, resolveTheme } from "./widget/theme";
 import type { AmqurWidgetConfig } from "./widget/types";
+import { resolveContainer, resolveDisplay } from "./widget/display";
+import {
+  requestClose,
+  requestOpen,
+  requestSend,
+  resetWidgetCommands,
+} from "./widget/commands";
 
 /** Captured while the bundle is executing; null when loaded in a way that hides the script. */
 const ASSET_BASE = assetBaseFromScript(
@@ -35,6 +42,7 @@ function cleanupHost(): void {
   disposeReact();
   document.getElementById("amqur-widget-host")?.remove();
   bootstrapped = false;
+  resetWidgetCommands();
   resetWidgetRuntime();
 }
 
@@ -51,6 +59,7 @@ function mount(host: HTMLElement, options: AmqurInitOptions) {
   const mountNode = document.createElement("div");
   mountNode.className = "amqur";
   mountNode.dataset.theme = theme;
+  mountNode.dataset.display = options.display === "inline" ? "inline" : "floating";
   shadow.appendChild(mountNode);
 
   reactRoot = createRoot(mountNode);
@@ -117,9 +126,15 @@ async function runBootstrap(options: AmqurInitOptions) {
   cleanupHost();
   const startedIn = generation;
 
+  // Inline display needs a real element to fill; anything else stays the floating widget.
+  const container = resolveContainer(options.container);
+  const display = resolveDisplay(options.display, container);
+  options = { ...options, display, container: display === "inline" ? container! : undefined };
+
   const host = document.createElement("div");
   host.id = "amqur-widget-host";
-  document.body.appendChild(host);
+  if (display === "inline") host.dataset.display = "inline";
+  (display === "inline" ? container! : document.body).appendChild(host);
 
   try {
     await initConnection(options);
@@ -153,12 +168,39 @@ function isReady(): boolean {
   return bootstrapped;
 }
 
+/** Opens the chat. Returns false when no widget is mounted. */
+function open(): boolean {
+  if (!bootstrapped) return false;
+  requestOpen();
+  return true;
+}
+
+/** Closes the floating chat (the inline display has nothing to close). */
+function close(): boolean {
+  if (!bootstrapped) return false;
+  requestClose();
+  return true;
+}
+
+/**
+ * Opens the chat and sends `text` as if the visitor had typed it (same path and length cap as
+ * the composer). If a reply is still in flight the text is placed in the composer instead of
+ * being dropped. Returns false when no widget is mounted or `text` is not a non-empty string.
+ */
+function send(text: string): boolean {
+  if (!bootstrapped) return false;
+  return requestSend(text);
+}
+
 declare global {
   interface Window {
     AMQUR?: {
       init: (opts: AmqurInitOptions) => Promise<void>;
       destroy: () => void;
       isReady: () => boolean;
+      open: () => boolean;
+      close: () => boolean;
+      send: (text: string) => boolean;
       version: string;
     };
   }
@@ -168,5 +210,8 @@ window.AMQUR = {
   init: bootstrap,
   destroy,
   isReady,
+  open,
+  close,
+  send,
   version: AMQUR_WIDGET_VERSION,
 };

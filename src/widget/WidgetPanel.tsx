@@ -41,10 +41,13 @@ export function WidgetPanel({
   open,
   onClose,
   lang,
+  inline = false,
 }: {
   open: boolean;
   onClose: () => void;
   lang: Lang;
+  /** Inline display: a page region, not a modal dialog — no close button, no focus trap. */
+  inline?: boolean;
 }) {
   const { bootstrap, config } = useWidget();
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -116,15 +119,16 @@ export function WidgetPanel({
   };
 
   useEffect(() => {
-    closeRef.current?.focus();
-  }, []);
+    // An inline chat must not pull focus away from the page it is part of.
+    if (!inline) closeRef.current?.focus();
+  }, [inline]);
 
   // Focus trap while the dialog is open. Every Tab is moved by hand rather than only at the
   // first and last control: Safari's default Tab skips buttons and links, so leaving the
   // middle of the order to the browser lets focus jump from the text box straight out of the
   // dialog.
   const onPanelKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (e.key !== 'Tab' || !panelRef.current) return;
+    if (inline || e.key !== 'Tab' || !panelRef.current) return;
     const focusable = panelRef.current.querySelectorAll<HTMLElement>(
       'button:not([disabled]), [href], textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
     );
@@ -141,8 +145,8 @@ export function WidgetPanel({
     <div
       ref={panelRef}
       className="amqur-panel"
-      role="dialog"
-      aria-modal="true"
+      role={inline ? 'region' : 'dialog'}
+      aria-modal={inline ? undefined : true}
       aria-label={`${locationName} — ${c(lang, 'aiAssistant')}`}
       onKeyDown={onPanelKeyDown}
     >
@@ -180,15 +184,17 @@ export function WidgetPanel({
         >
           <NewChatIcon />
         </button>
-        <button
-          ref={closeRef}
-          className="amqur-iconbtn amq-close"
-          onClick={onClose}
-          aria-label={c(lang, 'closeChat')}
-          type="button"
-        >
-          <CloseIcon />
-        </button>
+        {inline ? null : (
+          <button
+            ref={closeRef}
+            className="amqur-iconbtn amq-close"
+            onClick={onClose}
+            aria-label={c(lang, 'closeChat')}
+            type="button"
+          >
+            <CloseIcon />
+          </button>
+        )}
       </header>
 
       {confirmNew && (

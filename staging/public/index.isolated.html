@@ -1,68 +1,138 @@
 <!DOCTYPE html>
-<html lang="en" data-amqur-isolated-build="5bf4589">
+<!--template-note
+  Private owner preview page for the hosted widget builds.
+  TEMPLATE: scripts/build-embed-loader.mjs stamps the __AMQUR_*__ placeholders, keeps only the
+  profile blocks that match the build profile and removes this note. Never served unstamped.
+  No inline script or style: the HTML shell is served with a strict Content-Security-Policy.
+template-note-->
+<html lang="en" data-amqur-isolated-build="__AMQUR_BUILD__" data-amqur-profile="__AMQUR_PROFILE__" data-amqur-api-origin="__AMQUR_API_ORIGIN__">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
-  <title>AMQUR Isolated Staging — NOT FOR CUSTOMERS</title>
-  <style>
-    body { font-family: ui-sans-serif, system-ui, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
-    .banner { background: #b45309; color: #fff; padding: 12px 16px; font-weight: 700; letter-spacing: 0.02em; }
-    .wrap { max-width: 720px; margin: 40px auto; padding: 0 16px; }
-    code { background: #1e293b; padding: 2px 6px; border-radius: 4px; }
-    label { display: block; margin: 16px 0 6px; font-weight: 600; }
-    select, button { font: inherit; padding: 8px 12px; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: #e2e8f0; }
-    button { cursor: pointer; background: #b45309; border-color: #b45309; font-weight: 700; margin-top: 16px; }
-    .hint { color: #94a3b8; font-size: 0.95rem; }
-  </style>
+  <meta name="referrer" content="no-referrer" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#101113" />
+  <title>Dial Auto Group — AI assistant (private preview)</title>
+  <link rel="preload" href="./assets/fonts/archivo-latin-var.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="./owner-page.css" />
 </head>
 <body>
-  <div class="banner">STAGING — NOT FOR CUSTOMERS</div>
-  <div class="wrap">
-    <h1>Dial Us Now — Isolated Staging Canary (Railway)</h1>
-    <p class="hint">Authorized employees only. Points at isolated backend-staging-staging-b699 — not shared staging-api.dialusnow.com. Do not enter real customer information.</p>
-    <p>API: <code>https://backend-staging-staging-b699.up.railway.app/api</code> · Widget: <code>assistant-widget.iife.js</code></p>
+  <a class="skip" href="#assistant">Skip to the assistant</a>
 
-    <label for="tenant">Rooftop tenant</label>
-    <select id="tenant">
-      <option value="jeep-of-chicago">Jeep of Chicago</option>
-      <option value="dial-nissan-of-chicago">Dial Nissan of Chicago</option>
-      <option value="dial-chevy-of-chicago">Dial Chevy of Chicago</option>
-      <option value="infiniti-of-chicago">INFINITI of Chicago</option>
-      <option value="dial-cdjr-of-chicago">Dial CDJR of Chicago</option>
-    </select>
-
-    <div>
-      <button id="boot" type="button">Load assistant</button>
+  <header class="top">
+    <div class="brand">
+      <span class="brand__mark" aria-hidden="true"></span>
+      <div class="brand__text">
+        <p class="brand__name">Dial Auto Group</p>
+        <p class="brand__sub">AI assistant — private preview</p>
+      </div>
     </div>
-  </div>
+    <p class="powered">Powered by AMQUR</p>
+  </header>
+
+  <!--profile:isolated-staging-->
+  <p class="status" data-amqur-status="isolated-staging"><span class="status__mark" aria-hidden="true"></span>Private preview. Vehicles, appointments and lead receipts shown here are demonstration data, clearly labeled.</p>
+  <!--/profile-->
+  <!--profile:production-private-->
+  <p class="status" data-amqur-status="production-private"><span class="status__mark" aria-hidden="true"></span>Private preview. Live inventory, CRM and scheduling connections are not switched on yet.</p>
+  <!--/profile-->
+
+  <main class="stage">
+    <div class="brief">
+      <h1>Ask it anything.</h1>
+      <p class="lede">This is the assistant for Dial Auto Group’s stores. It takes everyday questions — a quick calculation, an explanation, a draft email — as readily as questions about vehicles, financing and service. Choose a store, then type in the chat or tap an example.</p>
+
+      <fieldset class="stores">
+        <legend>Choose a store</legend>
+        <div class="stores__grid">
+          <label class="store">
+            <input type="radio" name="store" value="dial-chevy-of-chicago" data-name="Dial Chevy of Chicago" checked />
+            <span class="store__card">
+              <span class="store__name">Dial Chevy of Chicago</span>
+              <span class="store__meta">Chevrolet</span>
+            </span>
+          </label>
+          <label class="store">
+            <input type="radio" name="store" value="dial-nissan-of-chicago" data-name="Dial Nissan of Chicago" />
+            <span class="store__card">
+              <span class="store__name">Dial Nissan of Chicago</span>
+              <span class="store__meta">Nissan</span>
+            </span>
+          </label>
+          <label class="store">
+            <input type="radio" name="store" value="infiniti-of-chicago" data-name="INFINITI of Chicago" />
+            <span class="store__card">
+              <span class="store__name">INFINITI of Chicago</span>
+              <span class="store__meta">INFINITI</span>
+            </span>
+          </label>
+          <label class="store">
+            <input type="radio" name="store" value="dial-cdjr-of-chicago" data-name="Dial Chrysler Dodge Jeep Ram of Chicago, South Side" />
+            <span class="store__card">
+              <span class="store__name">Dial Chrysler Dodge Jeep Ram of Chicago</span>
+              <span class="store__meta"><span class="store__side">South Side</span>7340 S Western Ave</span>
+            </span>
+          </label>
+          <label class="store">
+            <input type="radio" name="store" value="jeep-of-chicago" data-name="Jeep of Chicago, North Side" />
+            <span class="store__card">
+              <span class="store__name">Jeep of Chicago</span>
+              <span class="store__meta"><span class="store__side">North Side</span>5950 N Western Ave</span>
+            </span>
+          </label>
+          <!--profile:isolated-staging-->
+          <label class="store">
+            <input type="radio" name="store" value="dial-auto-group" data-name="Dial Auto Group" />
+            <span class="store__card">
+              <span class="store__name">Dial Auto Group</span>
+              <span class="store__meta">All five stores</span>
+            </span>
+          </label>
+          <!--/profile-->
+        </div>
+      </fieldset>
+
+      <section class="try" aria-labelledby="try-title">
+        <h2 id="try-title">Try asking</h2>
+        <ul class="chips">
+          <li><button type="button" class="chip" data-prompt="Explain quantum computing simply">Explain quantum computing simply</button></li>
+          <li><button type="button" class="chip" data-prompt="What is 17% of $42,500?">What is 17% of $42,500?</button></li>
+          <li><button type="button" class="chip" data-prompt="Compare the Tahoe and Suburban">Compare the Tahoe and Suburban</button></li>
+          <li><button type="button" class="chip" data-prompt="Should I lease or finance?">Should I lease or finance?</button></li>
+          <li><button type="button" class="chip" data-prompt="Speak to me in Urdu">Speak to me in Urdu</button></li>
+          <li><button type="button" class="chip" data-prompt="What can't you do?">What can’t you do?</button></li>
+          <li><button type="button" class="chip" data-prompt="Write a short thank-you email to a customer">Write a short thank-you email to a customer</button></li>
+          <li><button type="button" class="chip" data-prompt="How do I book a service appointment?">How do I book a service appointment?</button></li>
+        </ul>
+        <p class="try__hint" id="chip-hint" role="status" aria-live="polite"></p>
+      </section>
+    </div>
+
+    <section class="console" id="assistant" aria-label="Assistant" tabindex="-1" data-state="connecting">
+      <div class="console__state" id="assistant-state">
+        <div class="console__bar" aria-hidden="true"><span class="console__barmark"></span><span class="console__barname" id="assistant-state-store">Dial Chevy of Chicago</span></div>
+        <div class="console__body">
+          <div class="console__message" id="assistant-message" role="status" aria-live="polite">
+            <p class="console__title" id="assistant-state-title">Connecting to Dial Chevy of Chicago…</p>
+            <p class="console__detail" id="assistant-state-detail">This takes a moment.</p>
+          </div>
+          <div class="console__progress" aria-hidden="true"><span></span></div>
+          <button type="button" class="console__retry" id="assistant-retry" hidden>Try again</button>
+        </div>
+      </div>
+      <div class="console__mount" id="assistant-mount" hidden></div>
+      <noscript><p class="console__noscript">The assistant needs JavaScript. Turn it on in this browser and reload the page.</p></noscript>
+    </section>
+  </main>
+
+  <a class="jump" id="assistant-jump" href="#assistant" hidden><span class="jump__mark" aria-hidden="true"></span><span class="jump__label">Go to the chat</span><span class="jump__store" id="assistant-jump-store">Dial Chevy of Chicago</span></a>
+
+  <footer class="foot">
+    <p>Private preview for Dial Auto Group. Please don’t share this address.</p>
+  </footer>
 
   <script src="./assistant-widget.iife.js"></script>
-  <script>
-    (function () {
-      var API_BASE = "https://backend-staging-staging-b699.up.railway.app/api";
-      var bootBtn = document.getElementById("boot");
-      var tenantSelect = document.getElementById("tenant");
-
-      function boot() {
-        var api = window.AMQUR;
-        if (!api || typeof api.init !== "function") {
-          console.error("[AMQUR isolated-staging] widget API missing after IIFE load", api);
-          return;
-        }
-        if (typeof api.destroy === "function") {
-          try { api.destroy(); } catch (e) { /* ignore */ }
-        }
-        api.init({
-          apiBaseUrl: API_BASE,
-          tenantSlug: tenantSelect.value,
-          locationSlug: "main",
-          locale: "en",
-        });
-      }
-
-      bootBtn.addEventListener("click", boot);
-    })();
-  </script>
+  <script src="./owner-page.js"></script>
 </body>
 </html>

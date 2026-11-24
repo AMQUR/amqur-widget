@@ -8,6 +8,13 @@ export type AmqurWidgetConfig = {
     /** Styling fallback when the tenant has no server-side theme: neutral | showroom. */
     theme?: string;
     /**
+     * Presentation: `floating` (default — launcher + dialog) or `inline` (the chat fills
+     * `container`, always open). `inline` without a usable container falls back to `floating`.
+     */
+    display?: 'floating' | 'inline';
+    /** Element (or CSS selector for one) the widget fills when `display` is `inline`. */
+    container?: HTMLElement | string;
+    /**
      * Optional explicit host-page context (e.g. from the dealer's VDP template):
      * { pageType, vin, stockNumber, vehicleYear, vehicleMake, vehicleModel, vehicleTrim, campaign, department }
      */
