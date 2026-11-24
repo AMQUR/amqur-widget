@@ -207,6 +207,20 @@ export type PageContext = {
     pageType?: 'homepage' | 'inventory_search' | 'vdp' | 'specials' | 'finance' | 'service' | 'service_scheduler' | 'parts' | 'contact' | 'other';
     vin?: string;
     stockNumber?: string;
+    /** Page path only (no host, query or fragment). */
+    path?: string;
+    /** Published listing on a vehicle page, from the page's own schema.org Vehicle data. No price. */
+    vehicle?: {
+        year?: number;
+        make?: string;
+        model?: string;
+        trim?: string;
+        condition?: 'new' | 'used' | 'certified';
+        mileage?: number;
+        color?: string;
+        bodyType?: string;
+        fuelType?: string;
+    };
     utmSource?: string;
     utmMedium?: string;
     utmCampaign?: string;

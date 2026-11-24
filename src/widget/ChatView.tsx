@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import type { FormEvent } from 'react';
 import { useWidget } from './WidgetContext';
 import { CompareTable } from './CompareTable';
@@ -43,8 +43,10 @@ export function ChatView() {
     const { bootstrap, config } = useWidget();
     const f = bootstrap.features ?? ({} as typeof bootstrap.features);
     const pageContext = useMemo(() => collectPageContext(config.pageContext), [config.pageContext]);
+    // Read again at send time: single-page sites change the listing without reloading the widget.
+    const currentPageContext = useCallback(() => collectPageContext(config.pageContext), [config.pageContext]);
     const multilingual = f.multilingual === true || (bootstrap.locales ?? []).includes('es');
-    const conv = useConcierge({ lang: initialLang(config.locale, bootstrap.locales), pageContext, savedEnabled: f.savedVehicles === true });
+    const conv = useConcierge({ lang: initialLang(config.locale, bootstrap.locales), pageContext, currentPageContext, savedEnabled: f.savedVehicles === true });
     const lang = conv.language;
     const [input, setInput] = useState('');
     const [online, setOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -192,6 +194,7 @@ export function ChatView() {
                         lang={lang}
                         welcome={welcome}
                         pageContext={pageContext}
+                        liveInventory={f.inventory === true}
                         departments={{
                             sales: f.inventory === true && bootstrap.branding?.salesEnabled !== false,
                             service: (f.serviceAi === true || f.appointments === true) && bootstrap.branding?.serviceEnabled !== false,
@@ -200,7 +203,9 @@ export function ChatView() {
                         canAskForPerson={canAskForPerson}
                         onPick={(a) => {
                             if (a === 'human') void conv.send('', { action: 'human', display: c(lang, 'talkToPerson') });
-                            else if (a === 'vdp' && pageContext.vin) void conv.send('', { action: 'vehicle_detail', vin: pageContext.vin, display: c(lang, 'welcomeVdp') });
+                            else if (a === 'vdp' && pageContext.vin && f.inventory === true) void conv.send('', { action: 'vehicle_detail', vin: pageContext.vin, display: c(lang, 'welcomeVdp') });
+                            // No connected inventory: an ordinary question; the page's published listing rides along as page context.
+                            else if (a === 'vdp') void conv.send(c(lang, 'aboutThisVehicle'));
                             else if (a !== 'vdp') void conv.send('', { action: a, display: c(lang, a) });
                         }}
                     />

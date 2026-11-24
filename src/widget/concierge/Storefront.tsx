@@ -8,6 +8,8 @@ export function Storefront(props: {
     lang: Lang;
     welcome: string;
     pageContext: PageContext;
+    /** False when the store has no connected inventory: the vehicle chip asks the assistant instead of looking the unit up. */
+    liveInventory?: boolean;
     departments: { sales: boolean; service: boolean; parts: boolean };
     canAskForPerson?: boolean;
     onPick: (action: 'sales' | 'service' | 'parts' | 'vdp' | 'human') => void;
@@ -36,7 +38,7 @@ export function Storefront(props: {
             <p className="amq-storefront__welcome">{props.welcome}</p>
             {props.pageContext.pageType === 'vdp' && props.pageContext.vin && (
                 <button type="button" className="amq-btn amq-btn--primary amq-btn--block" onClick={() => props.onPick('vdp')}>
-                    {c(props.lang, 'welcomeVdp')}
+                    {c(props.lang, props.liveInventory === false ? 'askThisVehicle' : 'welcomeVdp')}
                 </button>
             )}
             {spots.map((sp) => (

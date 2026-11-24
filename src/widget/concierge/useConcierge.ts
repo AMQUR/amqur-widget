@@ -52,7 +52,7 @@ function loadTranscript(): { messages: UiMessage[]; journey: Journey } {
  *   replies and stops showing AI typing.
  * - Saved vehicles sync to the backend for the signed conversation; local list is a cache.
  */
-export function useConcierge(opts: { lang: Lang; pageContext: PageContext; savedEnabled: boolean }) {
+export function useConcierge(opts: { lang: Lang; pageContext: PageContext; currentPageContext?: () => PageContext; savedEnabled: boolean }) {
     const restored = useRef(loadTranscript());
     const [messages, setMessages] = useState<UiMessage[]>(restored.current.messages);
     const [typing, setTyping] = useState(false);
@@ -71,7 +71,9 @@ export function useConcierge(opts: { lang: Lang; pageContext: PageContext; saved
     const streamSupported = useRef<boolean | null>(null);
     const abortRef = useRef<AbortController | null>(null);
     const reduced = useRef(prefersReducedMotion());
-    const pageContextSent = useRef(false);
+    // Page context is sent with the first message and again whenever the page (path or listing) changes.
+    const pageContextSent = useRef<string | null>(null);
+    const currentPageContext = opts.currentPageContext;
 
     const push = useCallback((m: UiMessage) => setMessages((prev) => [...prev, m]), []);
 
@@ -143,7 +145,9 @@ export function useConcierge(opts: { lang: Lang; pageContext: PageContext; saved
             const controller = new AbortController();
             abortRef.current = controller;
             const cfg = getWidgetConfig();
-            const request: ChatRequestInput = {
+const pageNow = currentPageContext?.() ?? opts.pageContext;
+            const pageKey = `${pageNow.path ?? ''}|${pageNow.vin ?? ''}|${pageNow.pageType ?? ''}`;
+                        const request: ChatRequestInput = {
                 apiBaseUrl: cfg.apiBaseUrl,
                 jwtToken: cfg.jwtToken,
                 message: trimmed,
@@ -151,7 +155,7 @@ export function useConcierge(opts: { lang: Lang; pageContext: PageContext; saved
                 vin: options.vin,
                 conversationId: getConversationId(),
                 language,
-                pageContext: pageContextSent.current ? undefined : opts.pageContext,
+                pageContext: pageKey === pageContextSent.current ? undefined : pageNow,
                 lead: options.lead,
                 appointment: options.appointment,
             };
@@ -184,7 +188,7 @@ export function useConcierge(opts: { lang: Lang; pageContext: PageContext; saved
                 if (!res) {
                     // Servers without the stream endpoint: one JSON response, lightly paced.
                     res = await sendChatMessage(request);
-                    pageContextSent.current = true;
+                    pageContextSent.current = pageKey;
                     if (res.type !== 'staff_handling') {
                         const wait = presentationDelayMs({
                             elapsedMs: performance.now() - started,
@@ -202,7 +206,7 @@ export function useConcierge(opts: { lang: Lang; pageContext: PageContext; saved
                         }
                     }
                 }
-                pageContextSent.current = true;
+                pageContextSent.current = pageKey;
                 applyResponse(res, turnId);
             } catch (e) {
                 if (controller.signal.aborted) {
@@ -236,7 +240,7 @@ export function useConcierge(opts: { lang: Lang; pageContext: PageContext; saved
                 setBusy(false);
             }
         },
-        [busy, aiPaused, language, opts.pageContext, push, applyResponse],
+        [busy, aiPaused, language, opts.pageContext, currentPageContext, push, applyResponse],
     );
 
     /** Stop the reply in progress. Safe to call at any time. */
