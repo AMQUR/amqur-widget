@@ -42,6 +42,8 @@ async function noHorizontalOverflow(page: Page) {
             if (r.width === 0 || r.height === 0) return;
             // Carousels and day strips scroll horizontally by design.
             if (el.closest('.amq-cards, .amq-slotgroup, .amq-tray, .amq-compare')) return;
+            // Code blocks and tables scroll inside their own box; the box itself is still checked.
+            if (el.parentElement?.closest('.amq-md__code pre, .amq-md__table')) return;
             if (r.right > vw + 1 || r.left < -1) bad.push(`${el.className || el.tagName} [${Math.round(r.left)}..${Math.round(r.right)}] vw=${vw}`);
         });
         return bad.slice(0, 5);
@@ -282,6 +284,103 @@ test.describe('Showroom theme — sales journey', () => {
         await expect(form.getByText(/Responda STOP para cancelar/)).toBeVisible();
         await noHorizontalOverflow(page);
         await shot(page, '12-spanish-lead-form');
+    });
+});
+
+test.describe('Markdown replies (general-purpose lane)', () => {
+    test('renders rich Markdown safely inside the bubble, with copy actions', async ({ page, context }) => {
+        await open(page, 'tenant=jeep-of-chicago&theme=showroom');
+        await say(page, 'markdown please');
+        // While the reply streams there is no copy action on it.
+        await expect(page.getByRole('button', { name: 'Stop reply' })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Copy reply' })).toHaveCount(0);
+        await settled(page);
+
+        const log = page.getByRole('log');
+        await expect(log.getByRole('heading', { name: 'Comparing two demo trims' })).toBeVisible();
+        await expect(log.locator('.amq-md strong').first()).toHaveText('quick summary');
+        await expect(log.getByRole('table')).toBeVisible();
+        await expect(log.getByRole('columnheader')).toHaveCount(3);
+        await expect(log.locator('.amq-md ol > li')).toHaveCount(3);
+        await expect(log.locator('.amq-md ol ul > li')).toHaveCount(2);
+        await expect(log.locator('.amq-md blockquote')).toContainText('Demo data only');
+        await expect(log.locator('.amq-md__lang')).toHaveText('js');
+
+        // Links: only https is clickable, and it opens safely in a new tab.
+        const links = log.locator('.amq-md a');
+        await expect(links).toHaveCount(2);
+        for (const a of await links.all()) {
+            expect(await a.getAttribute('href')).toMatch(/^https:\/\//);
+            expect(await a.getAttribute('target')).toBe('_blank');
+            expect(await a.getAttribute('rel')).toBe('noopener noreferrer nofollow');
+        }
+
+        // Hostile fragments are inert text: no element was created and nothing ran.
+        await expect(log.getByText('<script>window.__xss=1</script>', { exact: false })).toBeVisible();
+        expect(await log.locator('.amq-md img, .amq-md script, .amq-md [onerror]').count()).toBe(0);
+        expect(await page.evaluate(() => (window as unknown as { __xss?: number }).__xss)).toBeUndefined();
+
+        // Nothing widens the bubble: code and table scroll inside their own box.
+        await noHorizontalOverflow(page);
+        const fit = await log.evaluate((el) => {
+            const bubble = el.querySelector<HTMLElement>('.amq-md')!;
+            const pre = el.querySelector<HTMLElement>('.amq-md__code pre')!;
+            const b = bubble.getBoundingClientRect();
+            return {
+                logScrollsSideways: el.scrollWidth > el.clientWidth + 1,
+                bubbleInLog: b.right <= el.getBoundingClientRect().right + 1,
+                preScrolls: pre.scrollWidth > pre.clientWidth,
+                boxesInside: [...bubble.querySelectorAll<HTMLElement>(':scope > *')].every((c) => c.getBoundingClientRect().right <= b.right + 1),
+            };
+        });
+        expect(fit).toEqual({ logScrollsSideways: false, bubbleInLog: true, preScrolls: true, boxesInside: true });
+        await shot(page, '09-markdown-reply');
+
+        // Copy the whole reply as readable text.
+        if (test.info().project.use.browserName === 'chromium') await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+        const copy = page.getByRole('button', { name: 'Copy reply' });
+        await expect(copy).toHaveCount(1);
+        await copy.click();
+        await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
+        if (test.info().project.use.browserName === 'chromium') {
+            const clip = await page.evaluate(() => navigator.clipboard.readText());
+            expect(clip).toContain('Comparing two demo trims');
+            expect(clip).toContain('quick summary');
+            expect(clip).not.toContain('**');
+        }
+        await expect(page.getByRole('button', { name: 'Copy reply' })).toBeVisible({ timeout: 5000 });
+        await expect(page.getByRole('button', { name: 'Copy code' })).toBeVisible();
+
+        const results = await new AxeBuilder({ page }).include('#amqur-widget-host').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
+        expect(results.violations.map((v) => `${v.id} × ${v.nodes.length} — ${v.nodes[0]?.target.join(' ')}`)).toEqual([]);
+    });
+
+    test('a long streaming reply follows the bottom, but not after the customer scrolls up', async ({ page }) => {
+        await open(page, 'tenant=jeep-of-chicago&theme=showroom');
+        await say(page, 'markdown please');
+        await settled(page);
+        const log = page.getByRole('log');
+        const gap = () => log.evaluate((el) => Math.round(el.scrollHeight - el.scrollTop - el.clientHeight));
+        await expect.poll(gap).toBeLessThan(8);
+
+        // Scroll up to read, then let another long reply stream in: the position must hold.
+        await log.evaluate((el) => el.scrollTo({ top: 40 }));
+        await expect.poll(() => log.evaluate((el) => Math.round(el.scrollTop))).toBe(40);
+        await page.getByRole('textbox', { name: /ask about vehicles/i }).fill('markdown again');
+        // Sending always brings the customer's own message into view…
+        await page.getByRole('textbox', { name: /ask about vehicles/i }).press('Enter');
+        await expect(page.getByRole('button', { name: 'Stop reply' })).toBeVisible();
+        await expect.poll(gap).toBeLessThan(80);
+        // …then they scroll up mid-stream and are left alone.
+        await log.evaluate((el) => el.scrollTo({ top: 60 }));
+        await settled(page);
+        expect(await log.evaluate((el) => Math.round(el.scrollTop))).toBe(60);
+
+        // Back at the bottom, the next reply is followed again.
+        await log.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
+        await say(page, 'markdown once more');
+        await settled(page);
+        await expect.poll(gap).toBeLessThan(8);
     });
 });
 

@@ -300,6 +300,9 @@ function turn(body, tenantSlug) {
                 disclaimer: es ? 'Datos de demostración. No es inventario real.' : 'Demo data. Not real inventory.',
             };
         }
+    } else if (msg.includes('markdown')) {
+        // General-purpose lane sample: one reply exercising every Markdown feature the widget renders.
+        out = { segments: [MARKDOWN_SAMPLE] };
     } else if (msg.includes('slow')) {
         out = { segments: [Array.from({ length: 60 }, (_, i) => `word${i}`).join(' ')], slow: true };
     } else {
@@ -310,6 +313,20 @@ function turn(body, tenantSlug) {
     }
     return { id, st, lang, out, response: { ...envelope(out, st, lang), conversationId: id, conversationIdIssued: !body.conversationId } };
 }
+
+/** Synthetic Markdown reply. Includes hostile fragments that must render as inert text. */
+const MARKDOWN_SAMPLE = [
+    '## Comparing two demo trims',
+    'Here is a **quick summary** with *emphasis*, `inline code` and a [safe link](https://example.com/demo-inventory).',
+    '| Trim | Drive | Demo price |\n|:-----|:-----:|-----------:|\n| Laredo | 4x4 | $41,000 |\n| Limited | 4x4 | $48,500 |\n| Summit Reserve with a long name | 4x4 | $63,900 |',
+    '1. Pick a trim\n   - Laredo for value\n   - Limited for comfort\n2. Ask for a payment illustration\n3. Book a visit',
+    '> Demo data only. Nothing here is real inventory.',
+    '```js\n// a deliberately long line that must scroll inside the block rather than widen the bubble\nconst monthly = (principal, apr, months) => principal * (apr / 1200) / (1 - Math.pow(1 + apr / 1200, -months));\n```',
+    'Unsafe input stays text: <img src=x onerror="window.__xss=1"> <script>window.__xss=1</script> [bad](javascript:window.__xss=1)',
+    'A very long address wraps: https://example.com/a/really/long/path/that/keeps/going/and/going/without/any/spaces/at/all/for/a/while/longer',
+    '---',
+    '### Next step\nTell me which trim you like.',
+].join('\n\n');
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const json = (res, status, data) => {

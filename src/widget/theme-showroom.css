@@ -77,6 +77,23 @@
 .amqur[data-theme="showroom"] .amq-msg--ai p,
 .amqur[data-theme="showroom"] .amq-msg--staff p { box-shadow: none; }
 .amqur[data-theme="showroom"] .amq-msg--staff p { border: 1px solid var(--amq-line-strong); }
+.amqur[data-theme="showroom"] .amq-md { font-size: 15px; line-height: 1.55; box-shadow: none; }
+.amqur[data-theme="showroom"] .amq-msg--staff .amq-md { border: 1px solid var(--amq-line-strong); }
+.amqur[data-theme="showroom"] .amq-md__h { font-stretch: 110%; letter-spacing: -0.012em; }
+.amqur[data-theme="showroom"] .amq-md__h--1 { font-size: 17px; font-stretch: 118%; letter-spacing: -0.022em; }
+.amqur[data-theme="showroom"] .amq-md__h--2 { font-size: 16px; }
+.amqur[data-theme="showroom"] .amq-md__h--3 { font-size: 15px; }
+.amqur[data-theme="showroom"] .amq-md a { color: var(--amq-ink); text-decoration-color: var(--amq-line-strong); }
+.amqur[data-theme="showroom"] .amq-md a:hover { text-decoration-color: var(--amq-dial); }
+.amqur[data-theme="showroom"] .amq-md blockquote { border-left: 2px solid var(--amq-ink); color: var(--amq-ink-soft); }
+.amqur[data-theme="showroom"] .amq-md li::marker { color: var(--amq-ink-soft); font-weight: 700; }
+.amqur[data-theme="showroom"] .amq-md__code { background: var(--amq-asphalt); color: var(--amq-on-asphalt); }
+.amqur[data-theme="showroom"] .amq-md__codebar { background: var(--amq-asphalt-raised); border-bottom-color: var(--amq-asphalt-line); }
+.amqur[data-theme="showroom"] .amq-md__lang { color: var(--amq-on-asphalt-mute); }
+.amqur[data-theme="showroom"] .amq-md__table { border-color: var(--amq-line-strong); }
+.amqur[data-theme="showroom"] .amq-md__table th { border-bottom: 2px solid var(--amq-ink); font-stretch: 110%; }
+.amqur[data-theme="showroom"] .amq-copy:hover { background: #e5e7e3; }
+.amqur[data-theme="showroom"] .amq-md__codebar .amq-copy:hover { background: var(--amq-asphalt-line); }
 .amqur[data-theme="showroom"] .amq-presence { background: var(--amqur-surface); border: 1px solid var(--amqur-border); color: var(--amq-ink-soft); }
 
 /* Labels are plain labels, not eyebrows */
@@ -121,8 +138,13 @@
 .amqur[data-theme="showroom"] .amq-field select:focus-visible,
 .amqur[data-theme="showroom"] .amq-check input:focus-visible,
 .amqur[data-theme="showroom"] .amq-composer textarea:focus-visible,
+.amqur[data-theme="showroom"] .amq-copy:focus-visible,
+.amqur[data-theme="showroom"] .amq-md__table:focus-visible,
 .amqur[data-theme="showroom"] .amq-body a:focus-visible,
 .amqur[data-theme="showroom"] .amq-footer a:focus-visible { outline: 3px solid var(--amq-ink); outline-offset: 2px; }
+
+.amqur[data-theme="showroom"] .amq-md__codebar .amq-copy:focus-visible,
+.amqur[data-theme="showroom"] .amq-md__code pre:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
 
 /* Chips: square status marks */
 .amqur[data-theme="showroom"] .amq-chip { background: #e5e7e3; color: var(--amq-ink); font-weight: 700; padding: 3px 7px; }

@@ -84,6 +84,23 @@ export function ExternalIcon(props: React.SVGProps<SVGSVGElement>) {
     );
 }
 
+export function CopyIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden {...props}>
+            <rect x="8.5" y="8.5" width="11" height="11" {...stroke} />
+            <path d="M15.5 8.5V4.5h-11v11h4" {...stroke} />
+        </svg>
+    );
+}
+
+export function CheckIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden {...props}>
+            <path d="M5 12.5l4.5 4.5L19 7.5" {...stroke} strokeWidth={2.2} />
+        </svg>
+    );
+}
+
 export function ChevronIcon({ dir = 'right', ...props }: React.SVGProps<SVGSVGElement> & { dir?: 'left' | 'right' }) {
     return (
         <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden {...props}>

@@ -747,3 +747,64 @@
 @media (max-width: 480px) {
     .amqur-portal { right: var(--amqur-launcher-right, 12px); bottom: var(--amqur-launcher-bottom, 12px); }
 }
+
+/* ───────────── Assistant Markdown ─────────────
+ * .amq-md is the bubble for ai/staff replies (plain <p> remains the bubble for user, system and
+ * error messages). Everything inside must stay within the bubble at 320px: long words and URLs
+ * wrap, code and tables scroll inside their own box.
+ */
+.amq-md { min-width: 0; max-width: 100%; padding: 10px 14px; border-radius: 18px; border-bottom-left-radius: 6px; background: var(--amqur-surface); border: 1px solid var(--amqur-border); font-size: 14.5px; line-height: 1.5; overflow-wrap: anywhere; display: flex; flex-direction: column; gap: 8px; }
+.amq-msg--ai .amq-md { box-shadow: 0 1px 2px rgba(15, 20, 35, 0.04); }
+.amq-msg--staff .amq-md { border-left: 3px solid var(--amqur-primary); }
+.amq-md > * { margin: 0; min-width: 0; max-width: 100%; }
+.amqur .amq-msg div.amq-md p { margin: 0; padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; white-space: normal; font-size: inherit; line-height: inherit; }
+.amq-md strong { font-weight: 700; }
+.amq-md a { color: var(--amqur-text); font-weight: 600; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--amqur-text) 45%, transparent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.amq-md a:hover { text-decoration-color: var(--amqur-primary); text-decoration-thickness: 2px; }
+.amq-md__h { margin: 0; font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; }
+.amq-md > .amq-md__h:not(:first-child) { margin-top: 4px; }
+.amq-md__h--1 { font-size: 16.5px; font-weight: 800; }
+.amq-md__h--2 { font-size: 15.5px; }
+.amq-md__h--3 { font-size: 14.5px; }
+.amq-md ul, .amq-md ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+.amq-md li { padding-left: 2px; }
+.amq-md li::marker { color: var(--amqur-muted); font-variant-numeric: tabular-nums; }
+.amq-md li > ul, .amq-md li > ol, .amq-md li > p, .amq-md li > .amq-md__code, .amq-md li > .amq-md__table, .amq-md li > blockquote { margin-top: 4px; }
+.amq-md blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--amqur-border); color: var(--amqur-muted); display: flex; flex-direction: column; gap: 6px; }
+.amq-md blockquote > * { margin: 0; min-width: 0; }
+.amq-md hr { width: 100%; height: 0; border: 0; border-top: 1px solid var(--amqur-border); margin: 2px 0; }
+.amq-md code { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.88em; }
+.amq-md :not(pre) > code { padding: 1px 5px; background: var(--amqur-bg); border: 1px solid var(--amqur-border); border-radius: 5px; overflow-wrap: anywhere; }
+
+.amq-md__code { background: #14161a; color: #f2f3f1; border-radius: 10px; overflow: hidden; }
+.amq-md__codebar { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 0 0 0 12px; background: #1f2227; border-bottom: 1px solid #34373d; }
+.amq-md__lang { font-size: 11.5px; font-weight: 600; color: #aab0b7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.amq-md__code pre { margin: 0; padding: 10px 12px; max-height: 320px; overflow: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: #595d65 transparent; font-size: 12.5px; line-height: 1.55; tab-size: 2; white-space: pre; overflow-wrap: normal; }
+.amq-md__code pre code { font-size: inherit; }
+.amq-md__code pre:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+
+.amq-md__table { overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; border: 1px solid var(--amqur-border); border-radius: 10px; }
+.amq-md__table:focus-visible { outline: 3px solid color-mix(in srgb, var(--amqur-primary) 60%, white); outline-offset: 2px; }
+.amq-md__table table { border-collapse: collapse; width: max-content; min-width: 100%; font-size: 13px; line-height: 1.4; font-variant-numeric: tabular-nums; overflow-wrap: break-word; word-break: normal; }
+.amq-md__table th, .amq-md__table td { padding: 7px 10px; text-align: left; vertical-align: top; max-width: 180px; }
+.amq-md__table th { background: var(--amqur-bg); font-weight: 700; white-space: nowrap; border-bottom: 1px solid var(--amqur-border); }
+.amq-md__table tbody tr + tr td { border-top: 1px solid var(--amqur-border); }
+
+/* Copy actions: full 44px hit area, light visual weight. */
+.amq-copy { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 44px; height: 44px; padding: 0 12px; background: transparent; border: 0; border-radius: 8px; color: var(--amqur-muted); font: inherit; cursor: pointer; transition: color 140ms ease, background 140ms ease; }
+.amq-copy:hover { color: var(--amqur-text); background: color-mix(in srgb, var(--amqur-text) 7%, transparent); }
+.amq-copy:focus-visible { outline: 3px solid color-mix(in srgb, var(--amqur-primary) 60%, white); outline-offset: 1px; }
+.amq-copy[data-state="done"] { color: var(--amq-ok, #1d6b3f); }
+.amq-copy__text { font-size: 12px; font-weight: 600; line-height: 1; white-space: nowrap; }
+/* The 44px target overlaps the gaps around it so the row only costs the height of the icon. */
+.amq-msg__copy { align-self: flex-start; margin: -13px 0 -15px -8px; }
+.amq-md__codebar .amq-copy { color: #c9ced4; }
+.amq-md__codebar .amq-copy:hover { color: #fff; background: #34373d; }
+.amq-md__codebar .amq-copy[data-state="done"] { color: #8fd3a8; }
+.amq-md__codebar .amq-copy:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+@media (prefers-reduced-motion: reduce) {
+    .amq-copy { transition: none; }
+}
+@media (forced-colors: active) {
+    .amq-md__code, .amq-md__table { border: 1px solid CanvasText; }
+}

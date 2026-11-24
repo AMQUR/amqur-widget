@@ -12,6 +12,10 @@ import { JourneyTray } from './concierge/JourneyTray';
 import { Storefront } from './concierge/Storefront';
 import { ProactiveEngagement } from './ProactiveEngagement';
 import { c } from './concierge/copy';
+import { CopyButton, Markdown } from './concierge/Markdown';
+import type { MarkdownLabels } from './concierge/Markdown';
+import { markdownToPlainText } from './concierge/mdParse';
+import { nextPinned } from './concierge/scrollPin';
 import type { Lang } from './concierge/types';
 
 function initialLang(cfgLocale?: string, locales?: string[]): Lang {
@@ -60,11 +64,15 @@ export function ChatView() {
 
     // Follow the conversation unless the customer deliberately scrolled up to read history.
     const pinned = useRef(true);
+    const lastUserId = useRef<string | null>(null);
     useEffect(() => {
         const el = logRef.current;
         if (!el) return;
+        let lastTop = el.scrollTop;
         const onScroll = () => {
-            pinned.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+            const top = el.scrollTop;
+            pinned.current = nextPinned(pinned.current, { top, lastTop, distance: el.scrollHeight - top - el.clientHeight });
+            lastTop = top;
         };
         el.addEventListener('scroll', onScroll, { passive: true });
         return () => el.removeEventListener('scroll', onScroll);
@@ -73,11 +81,37 @@ export function ChatView() {
         const el = logRef.current;
         if (!el) return;
         const last = conv.messages[conv.messages.length - 1];
-        if (last?.role === 'user') pinned.current = true;
+        // Sending a message always brings it into view — once, when it is added. (Re-pinning on
+        // every render while it was still the newest message undid a scroll-up made before the
+        // reply's first token.)
+        if (last?.role === 'user' && last.id !== lastUserId.current) {
+            lastUserId.current = last.id;
+            pinned.current = true;
+        }
         if (!pinned.current) return;
+        // Glide to a newly arrived message, but track a streaming reply instantly: restarting a
+        // smooth scroll on every token stutters and falls behind long answers.
+        const streaming = last?.role === 'assistant' && last.streaming === true;
+        const calm = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const behavior: ScrollBehavior = streaming || calm ? 'auto' : 'smooth';
         // after layout (cards/images) settles
-        requestAnimationFrame(() => el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }));
+        const frame = requestAnimationFrame(() => {
+            if (pinned.current) el.scrollTo({ top: el.scrollHeight, behavior });
+        });
+        return () => cancelAnimationFrame(frame);
     }, [conv.messages, conv.typing]);
+
+    const mdLabels = useMemo<MarkdownLabels>(
+        () => ({
+            copy: c(lang, 'copyMessage'),
+            copyCode: c(lang, 'copyCode'),
+            copied: c(lang, 'copied'),
+            copyFailed: c(lang, 'copyFailed'),
+            code: c(lang, 'codeBlock'),
+            table: c(lang, 'tableLabel'),
+        }),
+        [lang],
+    );
 
     const welcome =
         (typeof bootstrap.branding?.welcomeMessage === 'string' && bootstrap.branding.welcomeMessage.trim()) ||
@@ -168,8 +202,16 @@ export function ChatView() {
                                     {m.displayName ?? c(lang, 'staff')}
                                 </span>
                             )}
-                            {m.text && <p>{m.text}</p>}
+                            {m.text &&
+                                (m.author === 'system' || m.isError ? (
+                                    <p>{m.text}</p>
+                                ) : (
+                                    <Markdown text={m.text} streaming={m.streaming === true} labels={mdLabels} />
+                                ))}
                             {m.stopped && <span className="amq-msg__note">{c(lang, 'stopped')}</span>}
+                            {m.text && !m.streaming && !m.isError && m.author !== 'system' && (
+                                <CopyButton className="amq-msg__copy" label={mdLabels.copy} labels={mdLabels} getText={() => markdownToPlainText(m.text)} />
+                            )}
                             {m.vehicles && m.vehicles.length > 0 && (m.compare ? (
                                 <CompareTable vehicles={m.vehicles} lang={lang} />
                             ) : (
