@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "marquee",
+        "value": "*",
+        "files": [
+          "staging/public/index.isolated.html"
+        ],
+        "createdAt": "2026-11-24T12:22:31.844Z",
+        "reason": "agent triage: no auto-scrolling content; the only looping motion is the indeterminate connecting bar (disabled under prefers-reduced-motion) and the example chips scroll only by touch"
+      }
+    ]
+  }
+}
