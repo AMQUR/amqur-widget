@@ -4,6 +4,7 @@ import {
     refreshWidgetJwt,
     setConversationId,
     unwrapApiData,
+    getConversationId,
 } from '../../connect';
 import type { AppointmentSelection, ChatResponse, LeadSubmission, PageContext, StreamEvent } from '../concierge/types';
 
@@ -283,5 +284,24 @@ export async function fetchSpotlights(): Promise<Spotlight[]> {
         return Array.isArray(data) ? data.slice(0, 3) : [];
     } catch {
         return [];
+    }
+}
+
+/**
+ * Conversion analytics: a click on a dealership card button. Fire-and-forget; a store id and a
+ * link key only, never text the shopper typed. Never throws and never delays the navigation.
+ */
+export function trackHandoffClick(storeId: string, linkKey: string): void {
+    try {
+        const cfg = getWidgetConfig();
+        if (!cfg.jwtToken) return;
+        void fetch(`${normalizeApiBaseUrl(cfg.apiBaseUrl)}/chat/event`, {
+            method: 'POST',
+            keepalive: true,
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.jwtToken}` },
+            body: JSON.stringify({ type: 'handoff_click', storeId, linkKey, conversationId: getConversationId() ?? undefined }),
+        }).catch(() => undefined);
+    } catch {
+        /* analytics must never affect the shopper */
     }
 }

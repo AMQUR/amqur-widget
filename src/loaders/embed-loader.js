@@ -138,6 +138,22 @@
     window.__AMQUR_EMBED_BOOTSTRAPPED__ = false;
   }
 
+  /**
+   * Pages where a shopper enters credit, identity or payment details. The assistant does not
+   * load there at all: nothing it could add is worth sitting next to a credit application.
+   * The list is fixed here; the page cannot widen or narrow it.
+   */
+  var SENSITIVE_PATH = /(^|\/)(getfinancing|get-financing|credit-?app(lication)?|creditapp|preapproved|pre-approved|pre-approval|preapproval|finance-application|apply-for-(credit|financing)|apply-online|secure-credit|checkout|payment|transact|digital-retail(ing)?|sign-?in|log-?in|my-?account)(\/|\.|$)/i;
+  function excludedHere() {
+    var path = '';
+    try {
+      path = String(window.location.pathname || '');
+    } catch (e) {
+      return false;
+    }
+    return SENSITIVE_PATH.test(path);
+  }
+
   function boot() {
     if (window.__AMQUR_EMBED_BOOTSTRAPPED__) {
       return;
@@ -156,6 +172,7 @@
 
     var cfg = readConfig(script);
     if (!cfg) return;
+    if (excludedHere()) return;
 
     window.__AMQUR_EMBED_BOOTSTRAPPED__ = true;
 

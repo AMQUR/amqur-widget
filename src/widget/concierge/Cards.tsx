@@ -7,6 +7,7 @@ import { AppointmentPicker, AppointmentReceipt } from './AppointmentPicker';
 import { normalizeApiBaseUrl } from '../../connect';
 import { CaretIcon, ExternalIcon, LockIcon, PhoneIcon } from '../icons';
 import { safeHref } from './mdParse';
+import { trackHandoffClick } from '../api/chat.api';
 
 /** Collapsible details — keeps ONE short disclosure visible and the full terms one tap away. */
 function Details({ label, children }: { label: string; children: ReactNode }) {
@@ -239,6 +240,7 @@ export function CardView({ card, lang, apiBaseUrl, actions }: { card: Card; lang
                         {...(tel ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
                         data-amq-link={l.key}
                         data-amq-store={card.storeId}
+                        onClick={() => trackHandoffClick(card.storeId, l.key)}
                     >
                         {tel && <PhoneIcon aria-hidden />}
                         <span>{l.label}</span>

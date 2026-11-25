@@ -164,3 +164,12 @@ describe('embed loader: expected API origin', () => {
     expect(r.win.AMQUR_EMBED).toMatchObject({ environment: 'production', apiOrigin: 'https://api.dialusnow.com', widgetOrigin: 'https://widget.dialusnow.com' });
   });
 });
+
+describe('sensitive-page exclusion', () => {
+    const source = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'loaders', 'embed-loader.js'), 'utf8');
+    const m = source.match(/var SENSITIVE_PATH = (\/.*\/i);/);
+    const re = m ? (new Function(`return ${m[1]}`)() as RegExp) : /$^/;
+    it('has a fixed pattern in the loader', () => expect(m).not.toBeNull());
+    it.each(['/getfinancing', '/preapproved.aspx', '/credit-application', '/finance/apply-for-financing/', '/checkout', '/sign-in', '/myaccount'])('does not load on %s', (p) => expect(re.test(p)).toBe(true));
+    it.each(['/', '/inventory/new', '/viewdetails/used/1c4pjxan0tw180290/x', '/service-department', '/finance.aspx', '/paymentcalc.aspx', '/shopperwizard/mytradevalue', '/contactus', '/specials/vehicle-specials'])('loads on %s', (p) => expect(re.test(p)).toBe(false));
+});
