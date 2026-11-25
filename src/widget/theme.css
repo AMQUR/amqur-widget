@@ -1,3 +1,13 @@
+/*
+ * Host reset. `!important` matters here: for important declarations the shadow tree's own
+ * :host rule outranks the page's, so a dealer site rule such as
+ * `* { text-transform: uppercase !important }` cannot reach the widget through inheritance.
+ */
+:host {
+    all: initial !important;
+    display: block !important;
+}
+
 /* Variables on .amqur so they apply inside Shadow DOM (:root would target the document). */
 .amqur {
     /* Tenant-configurable */
@@ -5,19 +15,35 @@
     --amqur-accent: #ffffff;
 
     /* Neutral system */
-    --amqur-bg: #f6f6f4;
+    --amqur-bg: #f5f5f2;
     --amqur-surface: #ffffff;
-    --amqur-text: rgba(20, 20, 20, 0.96);
-    --amqur-muted: rgba(20, 20, 20, 0.6);
-    --amqur-border: rgba(0, 0, 0, 0.08);
+    --amqur-text: rgba(20, 22, 28, 0.96);
+    /* 0.70 keeps small secondary text at or above 4.5:1 on both the page and card surfaces. */
+    --amqur-muted: rgba(20, 22, 28, 0.7);
+    --amqur-border: rgba(15, 20, 30, 0.09);
 
-    --amqur-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
+    --amqur-shadow: 0 18px 50px -12px rgba(15, 20, 35, 0.28), 0 2px 8px rgba(15, 20, 35, 0.06);
+    --amq-card-shadow: 0 1px 2px rgba(15, 20, 35, 0.05), 0 6px 18px -8px rgba(15, 20, 35, 0.14);
     --amqur-radius-panel: 18px;
     --amqur-radius-control: 12px;
     --amqur-radius-bubble: 14px;
 
-    --amqur-font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+    /* Intentional system stack — never claim a webfont that is not shipped. */
+    --amqur-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
         "Apple Color Emoji", "Segoe UI Emoji";
+
+    color: var(--amqur-text);
+    line-height: 1.45;
+    letter-spacing: normal;
+    word-spacing: normal;
+    text-transform: none;
+    text-align: left;
+    text-indent: 0;
+    font-style: normal;
+    font-weight: 400;
+    direction: ltr;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
 }
 
 .amqur * {
@@ -52,6 +78,21 @@
 
 .amqur-launcher:hover {
     transform: scale(1.03);
+}
+
+.amqur-launcher:active {
+    transform: scale(0.97);
+}
+
+.amqur-launcher--offline {
+    box-shadow: 0 0 0 3px #f59e0b, var(--amqur-shadow);
+}
+
+.amqur-launcher__img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: inherit;
 }
 
 .amqur-launcher:focus-visible {
@@ -112,7 +153,6 @@
 
 /* Header */
 .amqur-header {
-    height: 48px;
     display: flex;
     align-items: center;
     padding: 0 10px;
@@ -333,10 +373,10 @@
 .amq-msg--error p { background: #fff4f2; border: 1px solid #f3c2b8; color: #8a2a17; }
 .amq-disclaimer { margin: 0; font-size: 11.5px; color: var(--amqur-muted); padding: 0 4px; }
 
-.amq-typing { align-self: flex-start; display: inline-flex; gap: 4px; padding: 12px 14px; background: var(--amqur-surface); border: 1px solid var(--amqur-border); border-radius: 16px 16px 16px 6px; }
-.amq-typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--amqur-muted); animation: amq-dot 1.1s infinite ease-in-out; }
-.amq-typing span:nth-child(2) { animation-delay: .15s; }
-.amq-typing span:nth-child(3) { animation-delay: .3s; }
+.amq-typing { align-self: flex-start; display: inline-flex; gap: 4px; padding: 12px 14px; background: var(--amqur-surface); border: 1px solid var(--amqur-border); border-radius: 16px 16px 16px 6px; align-items: center; }
+.amq-typing > span[aria-hidden] { width: 6px; height: 6px; border-radius: 50%; background: var(--amqur-muted); animation: amq-dot 1.1s infinite ease-in-out; }
+.amq-typing > span[aria-hidden]:nth-child(2) { animation-delay: .15s; }
+.amq-typing > span[aria-hidden]:nth-child(3) { animation-delay: .3s; }
 .amq-presence { align-self: center; font-size: 12px; color: var(--amqur-muted); padding: 4px 10px; border-radius: 999px; background: rgba(0,0,0,.04); }
 
 .amq-cards { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(240px, 82%); gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px; max-width: calc(400px - 28px); }
@@ -424,7 +464,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
     .amq-msg, .amqur-panel { animation: none; }
-    .amq-typing span { animation: none; opacity: .6; }
+    .amq-typing > span[aria-hidden] { animation: none; opacity: .6; }
     .amq-btn, .amq-dept { transition: none; }
 }
 @media (forced-colors: active) {
@@ -437,14 +477,6 @@
 @media (max-width: 480px) { .amqur-panel { position: fixed; } }
 
 /* ───────────── Owner-demo polish (2026-10) ───────────── */
-.amqur {
-    --amqur-bg: #f5f5f2;
-    --amqur-muted: rgba(20, 22, 28, 0.58);
-    --amqur-border: rgba(15, 20, 30, 0.09);
-    --amqur-shadow: 0 18px 50px -12px rgba(15, 20, 35, 0.28), 0 2px 8px rgba(15, 20, 35, 0.06);
-    --amq-card-shadow: 0 1px 2px rgba(15, 20, 35, 0.05), 0 6px 18px -8px rgba(15, 20, 35, 0.14);
-    --amqur-font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-}
 
 /* Launcher */
 .amqur-launcher { width: 60px; height: 60px; border-radius: 20px; }
@@ -453,7 +485,7 @@
 /* Header */
 .amq-header { height: auto; min-height: 60px; padding: 10px 10px 10px 14px; gap: 10px; background: var(--amqur-surface); border-bottom: 1px solid var(--amqur-border); }
 .amq-header__brand { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
-.amq-header__logo { height: 30px; width: auto; border-radius: 6px; }
+.amq-header__logo { height: 32px; max-height: 32px; max-width: 140px; width: auto; object-fit: contain; border-radius: 6px; }
 .amq-avatar { width: 36px; height: 36px; flex: 0 0 36px; border-radius: 12px; display: grid; place-items: center; font-size: 13px; font-weight: 750; letter-spacing: .02em; background: var(--amqur-primary); color: var(--amqur-accent); }
 .amq-header__text { display: flex; flex-direction: column; min-width: 0; }
 .amq-header__title { font-size: 15px; font-weight: 680; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -477,7 +509,26 @@
 
 /* Typing */
 .amq-typing { padding: 12px 14px; gap: 5px; border-radius: 18px 18px 18px 6px; }
-.amq-typing span { width: 7px; height: 7px; }
+.amq-typing > span[aria-hidden] { width: 7px; height: 7px; }
+.amq-typing__label { font-size: 12px; color: var(--amqur-muted); margin-left: 4px; }
+/* The label is aria-hidden like the dots (the status text is the bubble's aria-label), so the dot
+ * rules above match it too. Without this it rendered as a fourth 7px dot with its text spilling
+ * out one word per line. */
+.amq-typing > span.amq-typing__label[aria-hidden] { width: auto; height: auto; background: none; animation: none; opacity: 1; white-space: nowrap; }
+
+.amq-quick { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 8px; }
+.amq-chip--quick { cursor: pointer; border: 1px solid var(--amqur-border); background: var(--amqur-surface); }
+.amq-chip--quick:hover { border-color: var(--amqur-primary); }
+
+.amq-confirm { margin: 0; padding: 12px 14px; border-bottom: 1px solid var(--amqur-border); background: #fffdf7; display: flex; flex-direction: column; gap: 10px; }
+.amq-confirm p { margin: 0; font-size: 13px; line-height: 1.45; color: var(--amqur-text); }
+
+.amq-footer { border-top: 1px solid var(--amqur-border); padding: 10px 14px; font-size: 11px; line-height: 1.45; color: var(--amqur-muted); background: rgba(255, 255, 255, 0.55); }
+.amq-footer p { margin: 0 0 6px; }
+.amq-footer__links { display: flex; gap: 12px; flex-wrap: wrap; }
+.amq-footer a { color: inherit; }
+.amq-body { padding: 0; gap: 0; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.amq-unavailable { padding: 16px; font-size: 14px; color: var(--amqur-muted); }
 
 /* Cards */
 .amq-card { border-radius: 16px; padding: 14px; gap: 8px; box-shadow: var(--amq-card-shadow); }
@@ -555,7 +606,9 @@
 /* Composer */
 .amq-composer { padding: 10px 12px; gap: 8px; align-items: center; }
 .amq-composer textarea { border-radius: 14px; min-height: 44px; background: #f7f7f5; }
-.amq-send { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; }
+/* Fixed basis and a shrinkable text box: at 320px Firefox otherwise squeezes the button to 24px. */
+.amq-composer textarea { min-width: 0; }
+.amq-send { flex: 0 0 44px; width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; }
 .amq-lang { position: static; flex: 0 0 auto; min-width: 44px; height: 44px; border-radius: 14px; border: 1px solid var(--amqur-border); background: var(--amqur-surface); font-size: 12px; font-weight: 700; letter-spacing: .04em; padding: 0 8px; color: var(--amqur-text); cursor: pointer; }
 
 @media (max-width: 480px) {
@@ -576,3 +629,205 @@
 .amq-msg .amq-card p, .amq-msg p.amq-disclaimer { padding: 0; margin: 0; background: none; border: 0; border-radius: 0; box-shadow: none; font-size: 12px; line-height: 1.45; }
 .amq-msg p.amq-disclaimer { padding: 0 6px; font-size: 11.5px; }
 .amq-spotlight { border-left: 3px solid var(--amqur-primary); } .amq-storefront .amq-card p { margin: 0; }
+
+/* ───────────── Sales desk (2026-11): identity bar, gallery, forms, picker, receipts ───────────── */
+
+/* Visible keyboard focus on every control, including the two that previously had none. */
+.amqur-launcher:focus-visible { outline: 3px solid color-mix(in srgb, var(--amqur-primary) 60%, white); outline-offset: 3px; box-shadow: 0 0 0 3px #fff, var(--amqur-shadow); }
+.amqur-iconbtn:focus-visible { outline: 3px solid color-mix(in srgb, var(--amqur-primary) 60%, white); outline-offset: 1px; box-shadow: none; }
+.amq-chip--quick:focus-visible, .amq-slot:focus-visible, .amq-gallery__btn:focus-visible,
+.amq-field input:focus-visible, .amq-check input:focus-visible, .amq-radio input:focus-visible,
+.amq-body a:focus-visible, .amq-footer a:focus-visible { outline: 3px solid color-mix(in srgb, var(--amqur-primary) 60%, white); outline-offset: 2px; }
+
+/* 44px touch targets on everything a thumb has to hit. */
+.amq-btn { min-height: 44px; }
+.amq-vcard .amq-actions .amq-btn { min-height: 44px; }
+.amq-btn--icon { flex: 0 0 44px !important; width: 44px; }
+.amq-navbtn { width: 44px; height: 44px; }
+.amq-linkbtn { min-height: 44px; }
+.amq-chip--quick { min-height: 44px; padding: 0 14px; font-size: 13px; }
+.amqur-iconbtn { width: 44px; height: 44px; }
+.amq-btn:disabled, .amq-linkbtn:disabled { opacity: .55; cursor: not-allowed; }
+
+/* Header: store bar + call link */
+.amq-storebar { display: none; flex: 0 0 4px; width: 4px; align-self: stretch; min-height: 32px; background: var(--amq-store, var(--amqur-primary)); }
+.amq-header__call { text-decoration: none; flex: 0 0 44px; margin-left: auto; border: 1px solid var(--amqur-border); }
+.amq-header__call + .amq-new { margin-left: 0; }
+
+/* Human presence */
+.amq-staffbar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #1f2937; color: #fff; }
+.amq-staffbar__avatar { flex: 0 0 36px; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, 0.14); font-size: 13px; font-weight: 750; }
+.amq-staffbar__text { display: flex; flex-direction: column; min-width: 0; font-size: 12px; line-height: 1.35; }
+.amq-staffbar__text strong { font-size: 13.5px; font-weight: 680; }
+.amq-msg__who { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+.amq-msg__avatar { width: 22px; height: 22px; display: inline-grid; place-items: center; border-radius: 50%; background: var(--amqur-text); color: var(--amqur-surface); font-size: 10px; font-weight: 750; }
+.amq-msg__note { font-size: 12px; color: var(--amqur-muted); padding-left: 4px; }
+.amq-utility { display: flex; justify-content: flex-end; padding: 0 12px; }
+.amq-send--stop { background: var(--amqur-text); color: var(--amqur-surface); }
+
+/* Vehicle gallery + provenance */
+.amq-gallery { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: space-between; padding: 6px; pointer-events: none; }
+.amq-gallery__btn { pointer-events: auto; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 999px; background: rgba(16, 17, 19, 0.72); color: #fff; cursor: pointer; }
+.amq-gallery__btn:disabled { opacity: .35; cursor: default; }
+.amq-gallery__count { pointer-events: none; padding: 3px 8px; border-radius: 999px; background: rgba(16, 17, 19, 0.72); color: #fff; font-size: 11.5px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.amq-vcard__store { font-size: 12.5px; font-weight: 650; }
+.amq-vcard .amq-linkbtn { align-self: flex-start; }
+.amq-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .02em; }
+
+/* Lead form */
+.amq-form { gap: 10px; }
+.amq-form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.amq-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.amq-field label, .amq-fieldset legend { font-size: 12.5px; font-weight: 650; color: var(--amqur-text); padding: 0; }
+.amq-field input { width: 100%; min-height: 44px; padding: 8px 10px; border: 1px solid rgba(15, 20, 30, 0.32); border-radius: 10px; background: #fff; color: var(--amqur-text); font-size: 16px; line-height: 1.3; }
+.amq-field input[aria-invalid="true"] { border-color: #b3261e; border-width: 2px; }
+.amq-field__err { font-size: 12px; font-weight: 600; color: #8c1d18; }
+.amq-form__summary { margin: 0; padding: 8px 10px; background: #fdecea; color: #8c1d18; font-size: 12.5px; font-weight: 600; }
+.amq-msg .amq-card p.amq-form__summary { padding: 8px 10px; background: #fdecea; font-size: 12.5px; }
+.amq-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.amq-radios { display: flex; flex-wrap: wrap; gap: 6px; }
+.amq-radio { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid rgba(15, 20, 30, 0.32); border-radius: 10px; font-size: 13.5px; font-weight: 600; cursor: pointer; background: #fff; }
+.amq-radio:has(input:checked) { border-color: var(--amqur-text); box-shadow: inset 0 0 0 1px var(--amqur-text); }
+.amq-radio input, .amq-check input { width: 20px; height: 20px; margin: 0; flex: 0 0 20px; accent-color: var(--amqur-text); }
+.amq-check { display: flex; align-items: flex-start; gap: 10px; min-height: 44px; padding: 6px 0; font-size: 12.5px; line-height: 1.45; cursor: pointer; }
+.amq-check input { margin-top: 2px; }
+
+/* Appointment picker sheet (slides over the conversation, inside the panel) */
+.amq-sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; max-height: 86%; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 12px; padding: 14px 14px calc(14px + env(safe-area-inset-bottom)); background: var(--amqur-surface); border-top: 1px solid var(--amqur-border); border-radius: 18px 18px 0 0; box-shadow: 0 -18px 40px -20px rgba(15, 20, 35, 0.4); animation: amq-sheet-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.amq-sheet:focus { outline: none; }
+.amq-sheet__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.amq-sheet__close { flex: 0 0 44px; }
+.amq-slotgroup { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+.amq-slotgroup--times { flex-wrap: wrap; overflow: visible; }
+.amq-slot { flex: 0 0 auto; min-height: 44px; min-width: 72px; padding: 0 12px; border: 1px solid rgba(15, 20, 30, 0.32); border-radius: 10px; background: #fff; color: var(--amqur-text); font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer; }
+.amq-slot[aria-pressed="true"] { background: var(--amqur-text); border-color: var(--amqur-text); color: var(--amqur-surface); }
+@keyframes amq-sheet-in { from { transform: translateY(18px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* Receipts: a request must never look like a confirmation */
+.amq-receipt--confirmed { border-top: 4px solid #1d6b3f; }
+.amq-receipt--requested { border-style: dashed; }
+.amq-dl--receipt { grid-template-columns: auto 1fr; font-size: 13px; }
+.amq-dl--receipt dd { text-align: left; }
+
+/* Small screens: 320px must not clip */
+@media (max-width: 360px) {
+    .amq-form__row { grid-template-columns: 1fr; }
+    .amq-header { padding-left: 10px; gap: 6px; }
+    .amq-header__logo { max-width: 96px; }
+    .amq-log { padding-left: 10px; padding-right: 10px; }
+    .amq-cards { grid-auto-columns: 94%; }
+    .amq-vcard .amq-actions { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .amq-sheet { animation: none; }
+}
+@media (forced-colors: active) {
+    .amq-slot[aria-pressed="true"] { forced-color-adjust: none; background: Highlight; color: HighlightText; }
+    .amq-field input, .amq-slot, .amq-radio { border: 1px solid CanvasText; }
+}
+.amq-tray ul:focus-visible { outline: 3px solid color-mix(in srgb, var(--amqur-primary) 60%, white); outline-offset: -3px; }
+
+/* Short screens (small phones, landscape): give the conversation the room. */
+@media (max-height: 640px) {
+    .amq-tray ul { padding: 6px 12px; }
+    .amq-tray li { flex-direction: row; align-items: baseline; gap: 6px; padding: 3px 8px; }
+    .amq-tray__label { display: none; }
+    .amq-header { min-height: 56px; padding-top: 6px; padding-bottom: 6px; }
+    .amq-footer { padding: 6px 12px; font-size: 10.5px; line-height: 1.35; }
+    .amq-footer p { margin-bottom: 2px; }
+    .amq-composer { padding: 6px 10px; }
+}
+/* Gallery controls: full 44px hit area, lighter visual weight over the photo. */
+.amq-gallery__btn { background: transparent; }
+.amq-gallery__btn svg { width: 30px; height: 30px; padding: 6px; border-radius: 999px; background: rgba(16, 17, 19, 0.72); }
+.amq-gallery__btn:disabled { opacity: 0; }
+
+/*
+ * Host-tunable launcher position. Custom properties are the one thing a host page may pass
+ * through the shadow boundary: set them on #amqur-widget-host to clear a sticky footer or
+ * mobile action bar. Unset, the defaults above apply.
+ */
+.amqur-portal { right: var(--amqur-launcher-right, 24px); bottom: var(--amqur-launcher-bottom, 24px); }
+@media (max-width: 480px) {
+    .amqur-portal { right: var(--amqur-launcher-right, 12px); bottom: var(--amqur-launcher-bottom, 12px); }
+}
+
+/* ───────────── Assistant Markdown ─────────────
+ * .amq-md is the bubble for ai/staff replies (plain <p> remains the bubble for user, system and
+ * error messages). Everything inside must stay within the bubble at 320px: long words and URLs
+ * wrap, code and tables scroll inside their own box.
+ */
+.amq-md { min-width: 0; max-width: 100%; padding: 10px 14px; border-radius: 18px; border-bottom-left-radius: 6px; background: var(--amqur-surface); border: 1px solid var(--amqur-border); font-size: 14.5px; line-height: 1.5; overflow-wrap: anywhere; display: flex; flex-direction: column; gap: 8px; }
+.amq-msg--ai .amq-md { box-shadow: 0 1px 2px rgba(15, 20, 35, 0.04); }
+.amq-msg--staff .amq-md { border-left: 3px solid var(--amqur-primary); }
+.amq-md > * { margin: 0; min-width: 0; max-width: 100%; }
+.amqur .amq-msg div.amq-md p { margin: 0; padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; white-space: normal; font-size: inherit; line-height: inherit; }
+.amq-md strong { font-weight: 700; }
+.amq-md a { color: var(--amqur-text); font-weight: 600; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--amqur-text) 45%, transparent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.amq-md a:hover { text-decoration-color: var(--amqur-primary); text-decoration-thickness: 2px; }
+.amq-md__h { margin: 0; font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; }
+.amq-md > .amq-md__h:not(:first-child) { margin-top: 4px; }
+.amq-md__h--1 { font-size: 16.5px; font-weight: 800; }
+.amq-md__h--2 { font-size: 15.5px; }
+.amq-md__h--3 { font-size: 14.5px; }
+.amq-md ul, .amq-md ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+.amq-md li { padding-left: 2px; }
+.amq-md li::marker { color: var(--amqur-muted); font-variant-numeric: tabular-nums; }
+.amq-md li > ul, .amq-md li > ol, .amq-md li > p, .amq-md li > .amq-md__code, .amq-md li > .amq-md__table, .amq-md li > blockquote { margin-top: 4px; }
+.amq-md blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--amqur-border); color: var(--amqur-muted); display: flex; flex-direction: column; gap: 6px; }
+.amq-md blockquote > * { margin: 0; min-width: 0; }
+.amq-md hr { width: 100%; height: 0; border: 0; border-top: 1px solid var(--amqur-border); margin: 2px 0; }
+.amq-md code { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.88em; }
+.amq-md :not(pre) > code { padding: 1px 5px; background: var(--amqur-bg); border: 1px solid var(--amqur-border); border-radius: 5px; overflow-wrap: anywhere; }
+
+.amq-md__code { background: #14161a; color: #f2f3f1; border-radius: 10px; overflow: hidden; }
+.amq-md__codebar { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 0 0 0 12px; background: #1f2227; border-bottom: 1px solid #34373d; }
+.amq-md__lang { font-size: 11.5px; font-weight: 600; color: #aab0b7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.amq-md__code pre { margin: 0; padding: 10px 12px; max-height: 320px; overflow: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: #595d65 transparent; font-size: 12.5px; line-height: 1.55; tab-size: 2; white-space: pre; overflow-wrap: normal; }
+.amq-md__code pre code { font-size: inherit; }
+.amq-md__code pre:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+
+.amq-md__table { overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; border: 1px solid var(--amqur-border); border-radius: 10px; }
+.amq-md__table:focus-visible { outline: 3px solid color-mix(in srgb, var(--amqur-primary) 60%, white); outline-offset: 2px; }
+.amq-md__table table { border-collapse: collapse; width: max-content; min-width: 100%; font-size: 13px; line-height: 1.4; font-variant-numeric: tabular-nums; overflow-wrap: break-word; word-break: normal; }
+.amq-md__table th, .amq-md__table td { padding: 7px 10px; text-align: left; vertical-align: top; max-width: 180px; }
+.amq-md__table th { background: var(--amqur-bg); font-weight: 700; white-space: nowrap; border-bottom: 1px solid var(--amqur-border); }
+.amq-md__table tbody tr + tr td { border-top: 1px solid var(--amqur-border); }
+
+/* Copy actions: full 44px hit area, light visual weight. */
+.amq-copy { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 44px; height: 44px; padding: 0 12px; background: transparent; border: 0; border-radius: 8px; color: var(--amqur-muted); font: inherit; cursor: pointer; transition: color 140ms ease, background 140ms ease; }
+.amq-copy:hover { color: var(--amqur-text); background: color-mix(in srgb, var(--amqur-text) 7%, transparent); }
+.amq-copy:focus-visible { outline: 3px solid color-mix(in srgb, var(--amqur-primary) 60%, white); outline-offset: 1px; }
+.amq-copy[data-state="done"] { color: var(--amq-ok, #1d6b3f); }
+.amq-copy__text { font-size: 12px; font-weight: 600; line-height: 1; white-space: nowrap; }
+/* The 44px target overlaps the gaps around it so the row only costs the height of the icon. */
+.amq-msg__copy { align-self: flex-start; margin: -13px 0 -15px -8px; }
+.amq-md__codebar .amq-copy { color: #c9ced4; }
+.amq-md__codebar .amq-copy:hover { color: #fff; background: #34373d; }
+.amq-md__codebar .amq-copy[data-state="done"] { color: #8fd3a8; }
+.amq-md__codebar .amq-copy:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+@media (prefers-reduced-motion: reduce) {
+    .amq-copy { transition: none; }
+}
+@media (forced-colors: active) {
+    .amq-md__code, .amq-md__table { border: 1px solid CanvasText; }
+}
+
+/* ───────────── Inline display ─────────────
+ * `AMQUR.init({ display: 'inline', container })`: the chat fills the host's element instead of
+ * floating over the page. These rules outrank the floating and phone-sheet rules above. */
+:host([data-display="inline"]) { height: 100% !important; }
+.amqur[data-display="inline"] { height: 100%; }
+.amqur[data-display="inline"] .amqur-portal { position: static; inset: auto; z-index: auto; display: block; height: 100%; }
+.amqur[data-display="inline"] .amqur-panel { position: relative; inset: auto; z-index: auto; width: 100%; height: 100%; max-height: none; padding: 0; border-radius: 0; box-shadow: none; animation: none; }
+
+/* Dealership handoff card: verified links to a store's own website and phone. */
+.amq-card--dealer header { align-items: flex-start; }
+.amq-card--dealer .amq-chip { flex: none; white-space: nowrap; }
+.amq-dealer__meta { display: flex; flex-direction: column; gap: 2px; }
+.amq-dealer__brands { font-size: 13px; font-weight: 600; }
+.amq-dealer__primary { gap: 8px; }
+.amq-dealer__links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.amq-dealer__link { min-height: 44px; padding: 6px 10px; gap: 6px; font-size: 12.5px; line-height: 1.2; text-align: left; justify-content: flex-start; white-space: normal; overflow-wrap: anywhere; }
+.amq-dealer__link svg, .amq-dealer__primary svg { flex: none; width: 14px; height: 14px; }
+.amq-dealer__link:last-child:nth-child(odd) { grid-column: 1 / -1; }

@@ -13,6 +13,7 @@ ARG APP_RELEASE_ID=unknown
 ARG APP_RELEASE_VERSION=0.2.0
 RUN npm run build \
   && cp dist/assistant-widget.iife.js cdn/public/assistant-widget.iife.js \
+  && mkdir -p cdn/public/assets/fonts && cp -R dist/assets/fonts/. cdn/public/assets/fonts/ \
   && npm run build:embed \
   && mkdir -p /out \
   && cp -R cdn/public/. /out/ \

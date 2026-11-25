@@ -1,33 +1,37 @@
-import type { Vehicle } from './concierge/types';
+import type { Lang, Vehicle } from './concierge/types';
+import { c } from './concierge/copy';
 
 type Row = { label: string; value: (v: Vehicle) => string };
 
-const ROWS: Row[] = [
-    { label: 'Price', value: (v) => (v.price != null ? `$${v.price.toLocaleString('en-US')}` : '—') },
-    { label: 'Est. payment', value: (v) => (v.estimatedPayment != null ? `$${Math.round(v.estimatedPayment).toLocaleString('en-US')}/mo` : '—') },
-    { label: 'Trim', value: (v) => v.trim ?? '—' },
-    { label: 'Miles', value: (v) => (v.mileage != null ? v.mileage.toLocaleString('en-US') : '—') },
-    { label: 'Drivetrain', value: (v) => v.drivetrain ?? '—' },
-    { label: 'Fuel', value: (v) => v.fuelType ?? '—' },
-    { label: 'Color', value: (v) => v.color ?? '—' },
-    { label: 'Condition', value: (v) => v.condition ?? '—' },
-];
+function rowsFor(lang: Lang): Row[] {
+    const loc = lang === 'es' ? 'es-US' : 'en-US';
+    return [
+        { label: lang === 'es' ? 'Precio' : 'Price', value: (v) => (v.price != null ? `$${v.price.toLocaleString(loc)}` : '—') },
+        { label: lang === 'es' ? 'Pago est.' : 'Est. payment', value: (v) => (v.estimatedPayment != null ? `$${Math.round(v.estimatedPayment).toLocaleString(loc)}/mo` : '—') },
+        { label: 'Trim', value: (v) => v.trim ?? '—' },
+        { label: lang === 'es' ? 'Millas' : 'Miles', value: (v) => (v.mileage != null ? v.mileage.toLocaleString(loc) : '—') },
+        { label: lang === 'es' ? 'Tracción' : 'Drivetrain', value: (v) => v.drivetrain ?? '—' },
+        { label: lang === 'es' ? 'Combustible' : 'Fuel', value: (v) => v.fuelType ?? '—' },
+        { label: lang === 'es' ? 'Color' : 'Color', value: (v) => v.color ?? '—' },
+        { label: lang === 'es' ? 'Condición' : 'Condition', value: (v) => v.condition ?? '—' },
+    ];
+}
 
 /**
  * Up to three vehicles. Rows where vehicles differ are emphasized; identical rows collapse
  * to the bottom. Missing data shows "—" — never inferred.
  */
-export function CompareTable({ vehicles }: { vehicles: Vehicle[] }) {
+export function CompareTable({ vehicles, lang = 'en' }: { vehicles: Vehicle[]; lang?: Lang }) {
     const cols = vehicles.slice(0, 3);
     if (cols.length < 2) return null;
-    const rows = ROWS.map((r) => {
+    const rows = rowsFor(lang).map((r) => {
         const vals = cols.map(r.value);
         const known = vals.filter((x) => x !== '—');
         return { ...r, vals, differs: new Set(known).size > 1 };
     }).sort((a, b) => Number(b.differs) - Number(a.differs));
     const allFeatures = [...new Set(cols.flatMap((v) => v.features ?? []))].slice(0, 12);
     return (
-        <div className="amq-compare" role="region" aria-label="Vehicle comparison">
+        <div className="amq-compare" role="region" aria-label={c(lang, 'vehicleComparison')}>
             <table>
                 <thead>
                     <tr>

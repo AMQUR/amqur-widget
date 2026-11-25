@@ -1,0 +1,200 @@
+/*
+ * Dial "Showroom" theme for the AMQUR widget.
+ * Tokens mirror dial-auto-group-platform/src/app/globals.css (the design source of truth):
+ * graphite stage, white console, one red for the primary action and active state, Archivo,
+ * square corners (2px on fields), structural hairlines, restrained motion.
+ * Applied only when the mount node carries data-theme="showroom".
+ */
+.amqur[data-theme="showroom"] {
+    --amq-ink: #0f1012;
+    --amq-ink-soft: #33363b;
+    --amq-asphalt: #101113;
+    --amq-asphalt-raised: #1b1d21;
+    --amq-asphalt-line: #34373d;
+    --amq-on-asphalt: #f2f3f1;
+    --amq-on-asphalt-mute: #aab0b7;
+    --amq-line-strong: #9a9f9e;
+    --amq-dial: #e5042f;
+    --amq-dial-deep: #b3001f;
+    --amq-dial-wash: #fbe4e6;
+    --amq-ok: #1d6b3f;
+    --amq-warn: #8a5a00;
+    /* Store colour appears only as a thin bar beside the store name. */
+    --amq-store: var(--amq-dial);
+
+    --amqur-primary: var(--amq-dial);
+    --amqur-accent: #ffffff;
+    --amqur-bg: #f2f3f1;
+    --amqur-surface: #ffffff;
+    --amqur-text: var(--amq-ink);
+    --amqur-muted: #595d65;
+    --amqur-border: #d4d7d2;
+    --amqur-shadow: 0 28px 64px -24px rgba(16, 17, 19, 0.5), 0 2px 6px rgba(16, 17, 19, 0.14);
+    --amq-card-shadow: none;
+    --amqur-font: "AMQUR Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+    font-size: 14.5px;
+    line-height: 1.5;
+}
+
+/* Square precision everywhere; the few genuinely round marks are restored below. */
+.amqur[data-theme="showroom"] *,
+.amqur[data-theme="showroom"] *::before,
+.amqur[data-theme="showroom"] *::after { border-radius: 0; }
+.amqur[data-theme="showroom"] .amq-dot,
+.amqur[data-theme="showroom"] .amq-typing > span[aria-hidden] { border-radius: 50%; }
+.amqur[data-theme="showroom"] textarea,
+.amqur[data-theme="showroom"] input,
+.amqur[data-theme="showroom"] select { border-radius: 2px; }
+
+/* Launcher: graphite block, white mark. Red is reserved for the action inside. */
+.amqur[data-theme="showroom"] .amqur-launcher { background: var(--amq-asphalt); color: #fff; border-bottom: 4px solid var(--amq-dial); transition: transform 160ms ease-out, background 160ms ease-out; }
+.amqur[data-theme="showroom"] .amqur-launcher:hover { transform: none; background: var(--amq-asphalt-raised); }
+.amqur[data-theme="showroom"] .amqur-launcher:focus-visible { outline: 3px solid var(--amq-ink); outline-offset: 3px; box-shadow: 0 0 0 3px #fff, var(--amqur-shadow); }
+
+/* Panel */
+.amqur[data-theme="showroom"] .amqur-panel { border: 1px solid var(--amq-asphalt); animation-duration: 280ms; animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* Store identity bar: graphite stage */
+.amqur[data-theme="showroom"] .amq-header { background: var(--amq-asphalt); color: var(--amq-on-asphalt); border-bottom: 1px solid var(--amq-asphalt-line); min-height: 64px; }
+.amqur[data-theme="showroom"] .amq-storebar { display: block; }
+.amqur[data-theme="showroom"] .amq-header__title { color: var(--amq-on-asphalt); font-size: 15.5px; font-weight: 700; font-stretch: 110%; letter-spacing: -0.012em; }
+.amqur[data-theme="showroom"] .amq-header__status,
+.amqur[data-theme="showroom"] .amq-header__team { color: var(--amq-on-asphalt-mute); }
+.amqur[data-theme="showroom"] .amq-header__logo { background: #fff; padding: 3px 6px; }
+.amqur[data-theme="showroom"] .amq-avatar { background: var(--amq-asphalt-raised); color: var(--amq-on-asphalt); border: 1px solid var(--amq-asphalt-line); font-stretch: 110%; }
+.amqur[data-theme="showroom"] .amq-header .amqur-iconbtn { color: var(--amq-on-asphalt); }
+.amqur[data-theme="showroom"] .amq-header .amqur-iconbtn:hover { background: var(--amq-asphalt-raised); border-color: var(--amq-asphalt-line); }
+.amqur[data-theme="showroom"] .amq-header .amqur-iconbtn:focus-visible,
+.amqur[data-theme="showroom"] .amq-header a:focus-visible { outline: 3px solid #fff; outline-offset: 1px; box-shadow: none; }
+.amqur[data-theme="showroom"] .amq-header__call { color: var(--amq-on-asphalt); border-color: var(--amq-asphalt-line); }
+.amqur[data-theme="showroom"] .amq-header__call:hover { background: var(--amq-asphalt-raised); }
+.amqur[data-theme="showroom"] .amq-dot--on { background: #3f8a57; box-shadow: none; }
+
+/* Conversation */
+.amqur[data-theme="showroom"] .amq-msg p { font-size: 15px; line-height: 1.55; }
+.amqur[data-theme="showroom"] .amq-msg--user p { background: var(--amq-ink); color: #fff; }
+.amqur[data-theme="showroom"] .amq-msg--ai p,
+.amqur[data-theme="showroom"] .amq-msg--staff p { box-shadow: none; }
+.amqur[data-theme="showroom"] .amq-msg--staff p { border: 1px solid var(--amq-line-strong); }
+.amqur[data-theme="showroom"] .amq-md { font-size: 15px; line-height: 1.55; box-shadow: none; }
+.amqur[data-theme="showroom"] .amq-msg--staff .amq-md { border: 1px solid var(--amq-line-strong); }
+.amqur[data-theme="showroom"] .amq-md__h { font-stretch: 110%; letter-spacing: -0.012em; }
+.amqur[data-theme="showroom"] .amq-md__h--1 { font-size: 17px; font-stretch: 118%; letter-spacing: -0.022em; }
+.amqur[data-theme="showroom"] .amq-md__h--2 { font-size: 16px; }
+.amqur[data-theme="showroom"] .amq-md__h--3 { font-size: 15px; }
+.amqur[data-theme="showroom"] .amq-md a { color: var(--amq-ink); text-decoration-color: var(--amq-line-strong); }
+.amqur[data-theme="showroom"] .amq-md a:hover { text-decoration-color: var(--amq-dial); }
+.amqur[data-theme="showroom"] .amq-md blockquote { border-left: 2px solid var(--amq-ink); color: var(--amq-ink-soft); }
+.amqur[data-theme="showroom"] .amq-md li::marker { color: var(--amq-ink-soft); font-weight: 700; }
+.amqur[data-theme="showroom"] .amq-md__code { background: var(--amq-asphalt); color: var(--amq-on-asphalt); }
+.amqur[data-theme="showroom"] .amq-md__codebar { background: var(--amq-asphalt-raised); border-bottom-color: var(--amq-asphalt-line); }
+.amqur[data-theme="showroom"] .amq-md__lang { color: var(--amq-on-asphalt-mute); }
+.amqur[data-theme="showroom"] .amq-md__table { border-color: var(--amq-line-strong); }
+.amqur[data-theme="showroom"] .amq-md__table th { border-bottom: 2px solid var(--amq-ink); font-stretch: 110%; }
+.amqur[data-theme="showroom"] .amq-copy:hover { background: #e5e7e3; }
+.amqur[data-theme="showroom"] .amq-md__codebar .amq-copy:hover { background: var(--amq-asphalt-line); }
+.amqur[data-theme="showroom"] .amq-presence { background: var(--amqur-surface); border: 1px solid var(--amqur-border); color: var(--amq-ink-soft); }
+
+/* Labels are plain labels, not eyebrows */
+.amqur[data-theme="showroom"] .amq-card__eyebrow,
+.amqur[data-theme="showroom"] .amq-tray__label { text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 600; }
+
+/* Type: display voice for the numbers and names that matter */
+.amqur[data-theme="showroom"] .amq-storefront__welcome { font-size: 19px; font-weight: 800; font-stretch: 118%; letter-spacing: -0.022em; line-height: 1.2; }
+.amqur[data-theme="showroom"] .amq-card__title,
+.amqur[data-theme="showroom"] .amq-vcard__title strong { font-weight: 700; font-stretch: 110%; letter-spacing: -0.012em; }
+.amqur[data-theme="showroom"] .amq-price,
+.amqur[data-theme="showroom"] .amq-card__big { font-weight: 800; font-stretch: 118%; letter-spacing: -0.022em; font-variant-numeric: tabular-nums; }
+
+/* Buttons: one red primary; everything else is ink on hairline */
+.amqur[data-theme="showroom"] .amq-btn { background: var(--amqur-surface); border: 1px solid var(--amq-line-strong); color: var(--amq-ink); font-weight: 700; letter-spacing: 0; transition: background 160ms ease, border-color 160ms ease, color 160ms ease; }
+.amqur[data-theme="showroom"] .amq-btn:hover { background: var(--amqur-surface); border-color: var(--amq-ink); }
+.amqur[data-theme="showroom"] .amq-btn:active { transform: none; }
+.amqur[data-theme="showroom"] .amq-btn--primary { background: var(--amq-dial); border-color: var(--amq-dial); color: #fff; }
+.amqur[data-theme="showroom"] .amq-btn--primary:hover { background: var(--amq-dial-deep); border-color: var(--amq-dial-deep); filter: none; }
+.amqur[data-theme="showroom"] .amq-btn--ink { background: var(--amq-ink); border-color: var(--amq-ink); color: #fff; }
+.amqur[data-theme="showroom"] .amq-btn--ghost { background: transparent; border-color: var(--amqur-border); }
+.amqur[data-theme="showroom"] .amq-btn:disabled { opacity: 1; background: #e5e7e3; border-color: #e5e7e3; color: #595d65; cursor: not-allowed; }
+.amqur[data-theme="showroom"] .amq-send { background: var(--amq-dial); }
+.amqur[data-theme="showroom"] .amq-send:disabled { opacity: 1; background: #e5e7e3; color: #595d65; }
+.amqur[data-theme="showroom"] .amq-send--stop { background: var(--amq-ink); }
+.amqur[data-theme="showroom"] .amq-dept { box-shadow: none; border: 1px solid var(--amq-line-strong); font-weight: 700; font-stretch: 110%; text-align: left; padding: 0 14px; transition: border-color 160ms ease, background 160ms ease; }
+.amqur[data-theme="showroom"] .amq-dept:hover { border-color: var(--amq-ink); }
+.amqur[data-theme="showroom"] .amq-linkbtn { color: var(--amq-ink); text-decoration-color: var(--amq-line-strong); }
+
+/* One visible focus treatment */
+.amqur[data-theme="showroom"] .amq-btn:focus-visible,
+.amqur[data-theme="showroom"] .amq-dept:focus-visible,
+.amqur[data-theme="showroom"] .amq-send:focus-visible,
+.amqur[data-theme="showroom"] .amq-lang:focus-visible,
+.amqur[data-theme="showroom"] .amq-navbtn:focus-visible,
+.amqur[data-theme="showroom"] .amq-linkbtn:focus-visible,
+.amqur[data-theme="showroom"] .amq-chip--quick:focus-visible,
+.amqur[data-theme="showroom"] .amq-cards:focus-visible,
+.amqur[data-theme="showroom"] .amq-tray ul:focus-visible,
+.amqur[data-theme="showroom"] .amq-slot:focus-visible,
+.amqur[data-theme="showroom"] .amq-field input:focus-visible,
+.amqur[data-theme="showroom"] .amq-field select:focus-visible,
+.amqur[data-theme="showroom"] .amq-check input:focus-visible,
+.amqur[data-theme="showroom"] .amq-composer textarea:focus-visible,
+.amqur[data-theme="showroom"] .amq-copy:focus-visible,
+.amqur[data-theme="showroom"] .amq-md__table:focus-visible,
+.amqur[data-theme="showroom"] .amq-body a:focus-visible,
+.amqur[data-theme="showroom"] .amq-footer a:focus-visible { outline: 3px solid var(--amq-ink); outline-offset: 2px; }
+
+.amqur[data-theme="showroom"] .amq-md__codebar .amq-copy:focus-visible,
+.amqur[data-theme="showroom"] .amq-md__code pre:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+
+/* Chips: square status marks */
+.amqur[data-theme="showroom"] .amq-chip { background: #e5e7e3; color: var(--amq-ink); font-weight: 700; padding: 3px 7px; }
+.amqur[data-theme="showroom"] .amq-chip--ok { background: #e3efe7; color: var(--amq-ok); }
+.amqur[data-theme="showroom"] .amq-chip--info { background: #e5e7e3; color: var(--amq-ink-soft); }
+.amqur[data-theme="showroom"] .amq-chip--warn { background: #f5ead3; color: var(--amq-warn); }
+.amqur[data-theme="showroom"] .amq-chip--demo { background: var(--amq-asphalt); color: #fff; }
+.amqur[data-theme="showroom"] .amq-chip--quick { background: var(--amqur-surface); border: 1px solid var(--amq-line-strong); min-height: 36px; padding: 0 12px; font-size: 13px; }
+.amqur[data-theme="showroom"] .amq-chip--quick:hover { border-color: var(--amq-ink); }
+
+/* Cards: hairline structure instead of shadow */
+.amqur[data-theme="showroom"] .amq-card,
+.amqur[data-theme="showroom"] .amq-vcard { box-shadow: none; border: 1px solid var(--amqur-border); }
+.amqur[data-theme="showroom"] .amq-card { border-top: 2px solid var(--amq-ink); }
+.amqur[data-theme="showroom"] .amq-card--ok { border-color: var(--amqur-border); border-top-color: var(--amq-ok); }
+.amqur[data-theme="showroom"] .amq-card--info { border-color: var(--amqur-border); border-top-color: var(--amq-ink); }
+.amqur[data-theme="showroom"] .amq-card--confirmed { border-top: 4px solid var(--amq-ok); }
+.amqur[data-theme="showroom"] .amq-spotlight { border-left: 1px solid var(--amqur-border); }
+.amqur[data-theme="showroom"] .amq-vcard__media { background: #e5e7e3; }
+.amqur[data-theme="showroom"] .amq-vcard__est,
+.amqur[data-theme="showroom"] .amq-details__body { background: var(--amqur-bg); }
+.amqur[data-theme="showroom"] .amq-credit__icon { background: var(--amqur-bg); color: var(--amq-ink); }
+.amqur[data-theme="showroom"] .amq-navbtn { box-shadow: none; border-color: var(--amq-line-strong); }
+.amqur[data-theme="showroom"] .amq-compare__diff td { background: var(--amqur-bg); }
+
+/* Journey tray + composer */
+.amqur[data-theme="showroom"] .amq-gallery__btn svg { border-radius: 0; }
+.amqur[data-theme="showroom"] .amq-tray li { background: var(--amqur-bg); border: 1px solid var(--amqur-border); }
+.amqur[data-theme="showroom"] .amq-composer textarea { background: #fff; border-color: var(--amq-line-strong); }
+.amqur[data-theme="showroom"] .amq-lang { border-color: var(--amq-line-strong); }
+.amqur[data-theme="showroom"] .amq-confirm { background: var(--amqur-surface); }
+.amqur[data-theme="showroom"] .amq-footer { background: var(--amqur-surface); }
+
+/* Human presence */
+.amqur[data-theme="showroom"] .amq-staffbar { background: var(--amq-asphalt); color: var(--amq-on-asphalt); }
+.amqur[data-theme="showroom"] .amq-staffbar__avatar { background: var(--amq-asphalt-raised); border: 1px solid var(--amq-asphalt-line); color: var(--amq-on-asphalt); }
+.amqur[data-theme="showroom"] .amq-msg__avatar { background: var(--amq-ink); color: #fff; }
+
+/* Forms and picker */
+.amqur[data-theme="showroom"] .amq-field input,
+.amqur[data-theme="showroom"] .amq-field select { border-color: var(--amq-line-strong); background: #fff; }
+.amqur[data-theme="showroom"] .amq-slot { border-color: var(--amq-line-strong); font-weight: 700; }
+.amqur[data-theme="showroom"] .amq-slot:hover { border-color: var(--amq-ink); }
+.amqur[data-theme="showroom"] .amq-slot[aria-pressed="true"] { background: var(--amq-ink); border-color: var(--amq-ink); color: #fff; }
+.amqur[data-theme="showroom"] .amq-sheet { border-top: 2px solid var(--amq-ink); box-shadow: 0 -18px 40px -24px rgba(16, 17, 19, 0.45); animation-duration: 280ms; animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+.amqur[data-theme="showroom"] .amq-receipt { border: 1px solid var(--amqur-border); border-top: 4px solid var(--amq-ok); }
+.amqur[data-theme="showroom"] .amq-receipt--requested { border-top-color: var(--amq-line-strong); border-top-style: dashed; }
+
+@media (prefers-reduced-motion: reduce) {
+    .amqur[data-theme="showroom"] *,
+    .amqur[data-theme="showroom"] *::before,
+    .amqur[data-theme="showroom"] *::after { animation: none !important; transition: none !important; }
+}

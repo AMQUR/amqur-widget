@@ -39,3 +39,8 @@ test-results/
 
 version.json
 release.json
+test-results-sandbox
+playwright-report-sandbox
+test-results-integration
+dist-local
+test-results-owner

@@ -1,0 +1,12 @@
+# Railway config for the production-private hosted profile. scripts/deploy-hosted.sh installs this as
+# railway.toml in a clean export before `railway up`. The repo-root railway.toml builds the
+# plain CDN image: deploying a hosted service with it serves the page WITHOUT the login gate.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.production-private"
+
+[deploy]
+healthcheckPath = "/healthz"
+healthcheckTimeout = 60
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10

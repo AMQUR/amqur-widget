@@ -24,6 +24,30 @@ await window.AMQUR.init({ ... });
 window.AMQUR.destroy(); // unmount + cleanup
 ```
 
+Host-page commands (all return `false` when no widget is mounted):
+
+```js
+window.AMQUR.isReady();        // true once init() has mounted the widget
+window.AMQUR.open();           // open the floating chat
+window.AMQUR.close();          // close it
+window.AMQUR.send('Compare the Tahoe and Suburban');
+// Opens the chat and sends the text as if the visitor had typed it (same 2,000-character cap as
+// the composer). If a reply is still streaming, the text is placed in the composer instead.
+```
+
+Inline display — the chat fills an element of the host page instead of floating over it (always
+open, no launcher or close button, no page scroll lock, a labelled region rather than a modal):
+
+```js
+window.AMQUR.init({
+  apiBaseUrl, tenantSlug, locationSlug,
+  display: 'inline',                 // default: 'floating'
+  container: document.getElementById('assistant'), // element or CSS selector; give it a height
+});
+```
+
+`display: 'inline'` without a usable `container` falls back to the floating widget.
+
 ## Local development
 
 ```bash
